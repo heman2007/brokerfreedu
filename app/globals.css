@@ -1,0 +1,105 @@
+:root {
+  --paper: #e5e3dc;
+  --notice: #fcfbf7;
+  --ink: #15161b;
+  --soft: #5a5c64;
+  --indigo: #2a34c4;
+  --marker: #f4e430;
+  --signal: #b32217;
+  --rule: #15161b;
+  --rule-thin: #c3c0b7;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #131418;
+    --notice: #1c1e24;
+    --ink: #ecebe6;
+    --soft: #9a9ca4;
+    --indigo: #8e97ff;
+    --marker: #e2d23a;
+    --signal: #ff7264;
+    --rule: #3a3d46;
+    --rule-thin: #2b2e36;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #131418;
+  --notice: #1c1e24;
+  --ink: #ecebe6;
+  --soft: #9a9ca4;
+  --indigo: #8e97ff;
+  --marker: #e2d23a;
+  --signal: #ff7264;
+  --rule: #3a3d46;
+  --rule-thin: #2b2e36;
+}
+
+* {
+  box-sizing: border-box;
+}
+html {
+  scroll-padding-top: 72px;
+}
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-feature-settings: "tnum" 1;
+}
+img {
+  max-width: 100%;
+  display: block;
+}
+a {
+  color: var(--indigo);
+}
+
+.notice-card {
+  background: var(--notice);
+  border: 1.5px solid var(--rule);
+  box-shadow: 5px 5px 0 var(--rule-thin);
+}
+.notice-card:hover {
+  box-shadow: 5px 5px 0 var(--indigo);
+}
+.btn-primary {
+  background: var(--ink);
+  color: var(--paper);
+  border: 1.5px solid var(--ink);
+  box-shadow: 4px 4px 0 var(--ink);
+}
+.btn-primary:active {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0 var(--ink);
+}
+.btn-ghost {
+  background: transparent;
+  color: var(--ink);
+  border: 1.5px solid var(--ink);
+  box-shadow: 4px 4px 0 var(--rule-thin);
+}
+.btn-red {
+  background: var(--signal);
+  color: #fff;
+  border: 1.5px solid var(--signal);
+  box-shadow: 4px 4px 0 var(--ink);
+}
+.field-input {
+  background: var(--notice);
+  border: 1.5px solid var(--rule);
+  border-radius: 2px;
+}
+.field-input:focus {
+  outline: 3px solid var(--indigo);
+  outline-offset: 1px;
+}
+.chip-marker {
+  background: var(--marker);
+  color: #15161b;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}

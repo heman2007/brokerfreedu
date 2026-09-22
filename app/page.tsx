@@ -15,6 +15,10 @@ function fmtDate(dateStr: string) {
 export default async function HomePage() {
   const supabase = createClient();
 
+  const { count: signatureCount } = await supabase
+    .from("petition_signatures")
+    .select("*", { count: "exact", head: true });
+
   const { data: listingsRaw } = await supabase
     .from("listings")
     .select("*, photos:listing_photos(id, path, position)")
@@ -107,6 +111,53 @@ export default async function HomePage() {
               </Link>
             </div>
           )}
+        </div>
+      </section>
+
+      <section className="border-b-[1.5px] border-rule py-12">
+        <div className="max-w-[1080px] mx-auto px-5">
+          <h2 className="text-[26px] font-bold tracking-tight mb-6">How it works</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+            <div className="pt-3.5" style={{ borderTop: "3px solid var(--ink)" }}>
+              <span className="text-[13px] font-bold text-indigo block mb-1.5">Step 1</span>
+              <h3 className="font-semibold text-lg mb-1">You give notice</h3>
+              <p className="text-[15px] text-soft">
+                A month before you move out, you post the room with the date you&apos;re leaving,
+                the real rent, and the deposit.
+              </p>
+            </div>
+            <div className="pt-3.5" style={{ borderTop: "3px solid var(--ink)" }}>
+              <span className="text-[13px] font-bold text-indigo block mb-1.5">Step 2</span>
+              <h3 className="font-semibold text-lg mb-1">Someone plans around it</h3>
+              <p className="text-[15px] text-soft">
+                Students filter by the date they need a place, not by whatever a broker happens
+                to be sitting on that week.
+              </p>
+            </div>
+            <div className="pt-3.5" style={{ borderTop: "3px solid var(--ink)" }}>
+              <span className="text-[13px] font-bold text-indigo block mb-1.5">Step 3</span>
+              <h3 className="font-semibold text-lg mb-1">They talk to the owner</h3>
+              <p className="text-[15px] text-soft">
+                Contact details are shown to everyone, free, no sign-up wall. Nobody takes a cut.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="border-b-[1.5px] border-rule py-10">
+        <div className="max-w-[1080px] mx-auto px-5 flex items-center gap-6 flex-wrap">
+          <div className="text-[clamp(48px,9vw,88px)] font-bold tracking-tighter leading-none" style={{ color: "var(--signal)" }}>
+            {signatureCount ?? 0}
+          </div>
+          <div>
+            <p className="text-[17px] font-semibold">
+              student{(signatureCount ?? 0) === 1 ? "" : "s"} have signed the building safety petition
+            </p>
+            <Link href="/petition" className="underline text-[15px] text-indigo">
+              Read it and add your name
+            </Link>
+          </div>
         </div>
       </section>
 

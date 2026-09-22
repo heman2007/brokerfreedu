@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import PostForm from "@/components/PostForm";
+import CompleteProfile from "@/components/CompleteProfile";
 
 export const revalidate = 0;
 
@@ -33,10 +34,7 @@ export default async function PostPage() {
     return (
       <section className="py-12">
         <div className="max-w-[1080px] mx-auto px-5">
-          <h2 className="text-[26px] font-bold tracking-tight mb-2">Finish setting up your account</h2>
-          <Link href="/account" className="btn-primary inline-block px-5 py-3 font-semibold rounded-sm mt-3">
-            Go to account setup
-          </Link>
+          <CompleteProfile userId={user.id} email={user.email ?? null} />
         </div>
       </section>
     );

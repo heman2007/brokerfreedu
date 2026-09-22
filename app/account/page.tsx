@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import AuthFlows from "@/components/AuthFlows";
+import CompleteProfile from "@/components/CompleteProfile";
 import IdUpload from "@/components/IdUpload";
 import ListingCard from "@/components/ListingCard";
 import SignOutButton from "@/components/SignOutButton";
@@ -27,12 +28,13 @@ export default async function AccountPage() {
   const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single();
 
   if (!profile || !profile.name) {
-    // Signed in (e.g. clicked the magic link) but profile setup didn't complete —
-    // rare, but let them retry rather than get stuck.
+    // Signed in (e.g. clicked the magic link) but the profile's name never
+    // got saved — let them finish right here instead of bouncing back into
+    // email sign-in, which would just resend a link to an already-signed-in user.
     return (
       <section className="py-12">
         <div className="max-w-[1080px] mx-auto px-5">
-          <AuthFlows />
+          <CompleteProfile userId={user.id} email={user.email ?? null} />
         </div>
       </section>
     );

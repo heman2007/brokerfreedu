@@ -42,43 +42,64 @@ export default async function HomePage() {
 
   return (
     <>
-      <section className="border-b-[1.5px] border-rule py-12">
-        <div className="max-w-[1080px] mx-auto px-5">
-          <h1 className="text-[clamp(34px,6.2vw,62px)] leading-[1.02] tracking-tight font-bold mb-4">
-            The person moving out
-            <br />
-            knows first.
-          </h1>
-          <p className="text-[17.5px] text-soft max-w-[60ch] mb-2">
-            Brokers around DU charge half a month&apos;s rent for one piece of information: which
-            flat is about to be empty. Students already have it. Post it here before you leave,
-            and the next student walks in without paying anyone.
-          </p>
-          <div className="flex items-baseline gap-4 flex-wrap my-6">
-            <div className="text-[clamp(64px,13vw,132px)] leading-[0.82] font-bold tracking-tighter chip-marker px-1">
-              {soon.length}
+      <section className="border-b-[1.5px] border-rule min-h-[100dvh] flex items-center">
+        <div className="max-w-[1200px] mx-auto px-5 w-full grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-10 items-center">
+          <div className="animate-fade-in">
+            <h1 className="text-[clamp(34px,7vw,72px)] leading-[1.02] tracking-tight font-bold mb-4">
+              The person moving out
+              <br />
+              knows first.
+            </h1>
+            <p className="text-[17.5px] text-soft max-w-[60ch] mb-2">
+              Brokers around DU charge half a month&apos;s rent for one piece of information: which
+              flat is about to be empty. Students already have it. Post it here before you leave,
+              and the next student walks in without paying anyone.
+            </p>
+            <div className="flex items-baseline gap-4 flex-wrap my-6">
+              <div className="text-[clamp(64px,13vw,132px)] leading-[0.82] font-bold tracking-tighter chip-marker px-1 transition-transform hover:scale-105">
+                {soon.length}
+              </div>
+              <span className="text-[17px] max-w-[19ch] text-soft">
+                {soon.length === 1 ? "flat or room opens" : "flats and rooms open"} up near campus
+                in the next 30 days
+              </span>
             </div>
-            <span className="text-[17px] max-w-[19ch] text-soft">
-              {soon.length === 1 ? "flat or room opens" : "flats and rooms open"} up near campus
-              in the next 30 days
-            </span>
+            {soon.length > 0 && (
+              <div className="flex flex-wrap gap-2 mb-2">
+                {soon.slice(0, 8).map((l, i) => (
+                  <span
+                    key={l.id}
+                    className="border-[1.5px] border-rule rounded-sm px-2.5 py-1 text-[13.5px] bg-notice animate-fade-in"
+                    style={{ animationDelay: `${i * 40}ms`, animationFillMode: "backwards" }}
+                  >
+                    {l.locality} · {money(l.rent)} · {fmtDate(l.leaving_date)}
+                  </span>
+                ))}
+              </div>
+            )}
+            <div className="flex flex-wrap gap-3 mt-6">
+              <Link href="/browse" className="btn-primary inline-block px-5 py-3 font-semibold rounded-sm">
+                See what&apos;s open
+              </Link>
+              <Link href="/post" className="btn-ghost inline-block px-5 py-3 font-semibold rounded-sm">
+                Post the flat I&apos;m leaving
+              </Link>
+            </div>
           </div>
-          {soon.length > 0 && (
-            <div className="flex flex-wrap gap-2 mb-2">
-              {soon.slice(0, 8).map((l) => (
-                <span key={l.id} className="border-[1.5px] border-rule rounded-sm px-2.5 py-1 text-[13.5px] bg-notice">
-                  {l.locality} · {money(l.rent)} · {fmtDate(l.leaving_date)}
-                </span>
-              ))}
-            </div>
-          )}
-          <div className="flex flex-wrap gap-3 mt-6">
-            <Link href="/browse" className="btn-primary inline-block px-5 py-3 font-semibold rounded-sm">
-              See what&apos;s open
-            </Link>
-            <Link href="/post" className="btn-ghost inline-block px-5 py-3 font-semibold rounded-sm">
-              Post the flat I&apos;m leaving
-            </Link>
+
+          {/* Satyagraha — placeholder wording/photo, confirm with Deepanshu before shipping */}
+          <div className="lg:border-l-[1.5px] lg:border-rule-thin lg:pl-9 animate-fade-in" style={{ animationDelay: "150ms", animationFillMode: "backwards" }}>
+            <p className="font-serif italic text-[15px] text-soft mb-1">movement by</p>
+            <h2
+              className="text-[42px] font-bold tracking-tight leading-[0.95] mb-3"
+              style={{ color: "var(--signal)" }}
+            >
+              Satyagraha
+            </h2>
+            <p className="text-[20px] font-semibold leading-tight mb-1">Deepanshu Shokeen</p>
+            <p className="text-[12px] font-semibold text-soft uppercase tracking-[0.08em]">
+              DUSU Vice President 2026
+            </p>
           </div>
         </div>
       </section>

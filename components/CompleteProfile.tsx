@@ -45,7 +45,7 @@ export default function CompleteProfile({
       })
       .eq("id", userId);
     setBusy(false);
-    if (error) setErr("Couldn't save. Try again.");
+    if (error) setErr(`Couldn't save: ${error.message}`);
     else router.refresh();
   }
 

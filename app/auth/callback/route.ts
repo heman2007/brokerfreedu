@@ -22,38 +22,28 @@ export async function GET(request: NextRequest) {
       }
 
       const provider = data.user.app_metadata?.provider;
+      const meta = data.user.user_metadata || {};
 
-      // Pick up what they typed on the sign-up form before their email
-      // was verified, keyed by email rather than carried through the
-      // redirect URL (which Supabase's own link rewriting doesn't
-      // reliably preserve).
-      const { data: pending } = await supabase
-        .from("pending_signups")
-        .select("*")
-        .eq("email", email)
-        .maybeSingle();
-
-      const googleName =
-        provider === "google" ? (data.user.user_metadata?.full_name as string | undefined) : undefined;
+      // Password sign-up passes name/college/course/admission_year/area/phone
+      // straight into user_metadata at signUp() time — no fragile round trip
+      // needed. Google gives us a name but none of the DU-specific fields,
+      // so those stay blank and CompleteProfile picks up the slack.
+      const googleName = provider === "google" ? (meta.full_name as string | undefined) : undefined;
 
       await supabase
         .from("profiles")
         .update({
-          role: "student",
-          name: pending?.name || googleName || undefined,
-          college: pending?.college || undefined,
-          course: pending?.course || undefined,
-          admission_year: pending?.admission_year ?? undefined,
-          area: pending?.area || undefined,
-          phone: pending?.phone || undefined,
+          role: meta.role || "student",
+          name: meta.name || googleName || undefined,
+          college: meta.college || undefined,
+          course: meta.course || undefined,
+          admission_year: meta.admission_year ?? undefined,
+          area: meta.area || undefined,
+          phone: meta.phone || undefined,
           email,
           verified: true,
         })
         .eq("id", data.user.id);
-
-      if (pending) {
-        await supabase.from("pending_signups").delete().eq("email", email);
-      }
     }
   }
 

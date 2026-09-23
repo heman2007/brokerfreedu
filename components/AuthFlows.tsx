@@ -35,6 +35,7 @@ export default function AuthFlows() {
 }
 
 function StudentForm() {
+  const router = useRouter();
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [name, setName] = useState("");
   const [college, setCollege] = useState("");
@@ -43,20 +44,38 @@ function StudentForm() {
   const [area, setArea] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
   const [err, setErr] = useState("");
-  const [sent, setSent] = useState(false);
+  const [awaitingConfirm, setAwaitingConfirm] = useState(false);
   const [busy, setBusy] = useState(false);
   const [googleBusy, setGoogleBusy] = useState(false);
   const supabase = createClient();
 
-  async function submit() {
+  async function login() {
     setErr("");
-    if (!email.trim()) {
-      setErr("Enter your email.");
+    if (!email.trim() || !password) {
+      setErr("Enter your email and password.");
       return;
     }
-    if (mode === "signup" && !name.trim()) {
-      setErr("Name is needed to create an account.");
+    setBusy(true);
+    const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+    setBusy(false);
+    if (error) {
+      setErr(error.message);
+      return;
+    }
+    router.push("/account");
+    router.refresh();
+  }
+
+  async function signup() {
+    setErr("");
+    if (!name.trim() || !college.trim() || !phone.trim() || !email.trim() || !password) {
+      setErr("Name, college, phone, email, and a password are all needed.");
+      return;
+    }
+    if (password.length < 6) {
+      setErr("Password needs to be at least 6 characters.");
       return;
     }
     if (!/^\S+@\S+\.\S+$/.test(email)) {
@@ -64,38 +83,60 @@ function StudentForm() {
       return;
     }
     if (!isDuEmail(email.trim())) {
-      setErr("Only DU email addresses (ending in du.ac.in) can sign in here.");
+      setErr("Only DU email addresses (ending in du.ac.in) can sign up here.");
       return;
     }
     setBusy(true);
 
-    // Only write pending_signups on Sign up — a returning user just
-    // logging in shouldn't have their existing profile details
-    // overwritten (or be forced to retype them).
-    if (mode === "signup") {
-      const { error: pendingErr } = await supabase.from("pending_signups").upsert({
-        email: email.trim(),
-        name: name.trim(),
-        college: college.trim(),
-        course: course.trim(),
-        admission_year: admissionYear ? Number(admissionYear) : null,
-        area: area.trim(),
-        phone: phone.trim(),
-      });
-      if (pendingErr) {
-        setBusy(false);
-        setErr(`Couldn't save your details: ${pendingErr.message}`);
-        return;
-      }
+    const { data, error } = await supabase.auth.signUp({
+      email: email.trim(),
+      password,
+      options: {
+        emailRedirectTo: `${location.origin}/auth/callback`,
+        data: {
+          name: name.trim(),
+          college: college.trim(),
+          course: course.trim(),
+          admission_year: admissionYear ? Number(admissionYear) : null,
+          area: area.trim(),
+          phone: phone.trim(),
+          role: "student",
+        },
+      },
+    });
+
+    if (error) {
+      setBusy(false);
+      setErr(error.message);
+      return;
     }
 
-    const { error } = await supabase.auth.signInWithOtp({
-      email: email.trim(),
-      options: { emailRedirectTo: `${location.origin}/auth/callback` },
-    });
+    if (data.session && data.user) {
+      // Email confirmation is OFF in this Supabase project — already logged in,
+      // so write the profile now rather than waiting on a link that won't come.
+      await supabase
+        .from("profiles")
+        .update({
+          role: "student",
+          name: name.trim(),
+          college: college.trim(),
+          course: course.trim(),
+          admission_year: admissionYear ? Number(admissionYear) : null,
+          area: area.trim(),
+          phone: phone.trim(),
+          email: email.trim(),
+          verified: true,
+        })
+        .eq("id", data.user.id);
+      setBusy(false);
+      router.push("/account");
+      router.refresh();
+      return;
+    }
+
+    // Email confirmation is ON — one link, once, then password login from here on.
     setBusy(false);
-    if (error) setErr(error.message);
-    else setSent(true);
+    setAwaitingConfirm(true);
   }
 
   async function withGoogle() {
@@ -107,16 +148,16 @@ function StudentForm() {
         queryParams: { hd: "du.ac.in", prompt: "select_account" },
       },
     });
-    // browser redirects away; no further local state needed
   }
 
-  if (sent) {
+  if (awaitingConfirm) {
     return (
       <div className="notice-card rounded-sm p-5 max-w-[500px] animate-fade-in">
-        <h3 className="font-semibold text-lg mb-2">Check your inbox</h3>
+        <h3 className="font-semibold text-lg mb-2">Confirm your email</h3>
         <p className="text-soft text-[15px]">
-          We&apos;ve sent a sign-in link to <strong className="text-ink">{email}</strong>. Open it
-          on this device to finish.
+          We&apos;ve sent a one-time confirmation link to <strong className="text-ink">{email}</strong>.
+          Click it once, then come back and log in with the password you just set — no more
+          links after this.
         </p>
       </div>
     );
@@ -137,7 +178,7 @@ function StudentForm() {
       </p>
       <div className="flex items-center gap-3 mb-5">
         <div className="h-px flex-1 bg-rule-thin" />
-        <span className="text-[13px] text-soft">or use your DU email</span>
+        <span className="text-[13px] text-soft">or use email + password</span>
         <div className="h-px flex-1 bg-rule-thin" />
       </div>
 
@@ -156,14 +197,19 @@ function StudentForm() {
         </button>
       </div>
 
-      <div className="notice-card rounded-sm p-5 transition-all">
+      <div className="notice-card rounded-sm p-5">
         {mode === "login" ? (
           <>
-            <h3 className="font-semibold text-lg mb-1">Log in</h3>
-            <p className="text-[14px] text-soft mb-4">Already have an account — just your email, nothing to retype.</p>
+            <h3 className="font-semibold text-lg mb-4">Log in</h3>
             <Field label="Email">
               <input type="email" className="field-input w-full px-2.5 py-2 text-[15px]" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@ramjas.du.ac.in" />
             </Field>
+            <Field label="Password">
+              <input type="password" className="field-input w-full px-2.5 py-2 text-[15px]" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === "Enter" && login()} />
+            </Field>
+            <button onClick={login} disabled={busy} className="btn-primary px-5 py-2.5 font-semibold rounded-sm mt-1 transition-transform active:scale-[0.98]">
+              {busy ? "Logging in…" : "Log in"}
+            </button>
           </>
         ) : (
           <>
@@ -188,14 +234,17 @@ function StudentForm() {
             <Field label="Email" hint="Must end in du.ac.in — this is what keeps the board DU-only.">
               <input type="email" className="field-input w-full px-2.5 py-2 text-[15px]" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@ramjas.du.ac.in" />
             </Field>
-            <Field label="Phone" hint="Kept private — never shown on the website or shared publicly. Only used to reach you about your own listings.">
+            <Field label="Phone" hint="Kept private — never shown on the website or shared publicly.">
               <input inputMode="tel" className="field-input w-full px-2.5 py-2 text-[15px]" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="10-digit number" />
             </Field>
+            <Field label="Password" hint="At least 6 characters. This is what you'll log in with from now on.">
+              <input type="password" className="field-input w-full px-2.5 py-2 text-[15px]" value={password} onChange={(e) => setPassword(e.target.value)} />
+            </Field>
+            <button onClick={signup} disabled={busy} className="btn-primary px-5 py-2.5 font-semibold rounded-sm mt-1 transition-transform active:scale-[0.98]">
+              {busy ? "Creating account…" : "Create account"}
+            </button>
           </>
         )}
-        <button onClick={submit} disabled={busy} className="btn-primary px-5 py-2.5 font-semibold rounded-sm mt-1 transition-transform active:scale-[0.98]">
-          {busy ? "Sending link…" : "Send sign-in link"}
-        </button>
         {err && <p className="text-[14px] mt-2" style={{ color: "var(--signal)" }}>{err}</p>}
       </div>
     </div>

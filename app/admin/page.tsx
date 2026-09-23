@@ -30,12 +30,13 @@ export default async function AdminPage() {
     );
   }
 
-  const [{ data: pendingProfiles }, { data: reports }, { data: buildingReports }, { data: suspicious }] =
+  const [{ data: pendingProfiles }, { data: reports }, { data: suspicious }, { data: dangerReports }, { data: yellowRequests }] =
     await Promise.all([
       supabase.from("profiles").select("*").eq("role", "student").eq("verified", false).not("id_upload_path", "is", null),
       supabase.from("reports").select("*, listings(id, type, locality)").eq("resolved", false).order("created_at", { ascending: false }),
-      supabase.from("building_reports").select("*").order("created_at", { ascending: false }).limit(50),
       supabase.from("suspicious_phone_numbers").select("*"),
+      supabase.from("danger_zone_reports").select("*").order("created_at", { ascending: false }).limit(100),
+      supabase.from("yellow_zone_requests").select("*").order("created_at", { ascending: false }).limit(100),
     ]);
 
   async function approveVerification(formData: FormData) {
@@ -59,6 +60,26 @@ export default async function AdminPage() {
     const supabase = createClient();
     const id = formData.get("id") as string;
     await supabase.from("listings").update({ status: "removed" }).eq("id", id);
+    revalidatePath("/admin");
+  }
+
+  async function markDangerReviewed(formData: FormData) {
+    "use server";
+    const supabase = createClient();
+    const id = formData.get("id") as string;
+    await supabase.from("danger_zone_reports").update({ status: "reviewed" }).eq("id", id);
+    revalidatePath("/admin");
+  }
+
+  async function setYellowStatus(formData: FormData) {
+    "use server";
+    const supabase = createClient();
+    const id = formData.get("id") as string;
+    const status = formData.get("status") as string;
+    await supabase
+      .from("yellow_zone_requests")
+      .update({ status, audited_at: status === "audited" ? new Date().toISOString() : null })
+      .eq("id", id);
     revalidatePath("/admin");
   }
 
@@ -133,19 +154,67 @@ export default async function AdminPage() {
         </div>
 
         <div>
-          <h2 className="text-[24px] font-bold tracking-tight mb-4">Building condition reports (full detail)</h2>
-          {buildingReports && buildingReports.length > 0 ? (
+          <h2 className="text-[24px] font-bold tracking-tight mb-4">Danger Zone reports (full detail)</h2>
+          {dangerReports && dangerReports.length > 0 ? (
             <div className="space-y-3">
-              {buildingReports.map((b) => (
-                <div key={b.id} className="notice-card rounded-sm p-4">
-                  <p className="font-semibold">{b.locality} · {b.issue}</p>
-                  <p className="text-[14.5px] mt-1">{b.description}</p>
-                  {b.address && <p className="text-[13px] text-soft mt-1">Address: {b.address}</p>}
+              {dangerReports.map((d: any) => (
+                <div key={d.id} className="notice-card rounded-sm p-4">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <p className="font-semibold">{d.locality} · {d.status}</p>
+                    {d.status === "open" && (
+                      <form action={markDangerReviewed}>
+                        <input type="hidden" name="id" value={d.id} />
+                        <button className="btn-ghost px-3 py-1.5 text-sm font-semibold rounded-sm">Mark reviewed</button>
+                      </form>
+                    )}
+                  </div>
+                  <p className="text-[14.5px] mt-1">{d.description}</p>
+                  <p className="text-[13px] text-soft mt-1">
+                    Address: {d.address} {d.lat && d.lng ? `(${d.lat}, ${d.lng})` : ""}
+                  </p>
+                  {d.owner_phone && <p className="text-[13px] text-soft">Owner phone: {d.owner_phone}</p>}
                 </div>
               ))}
             </div>
           ) : (
             <p className="text-soft text-[15px]">No reports filed.</p>
+          )}
+        </div>
+
+        <div>
+          <h2 className="text-[24px] font-bold tracking-tight mb-4">Yellow Zone audit requests</h2>
+          {yellowRequests && yellowRequests.length > 0 ? (
+            <div className="space-y-3">
+              {yellowRequests.map((y: any) => (
+                <div key={y.id} className="notice-card rounded-sm p-4">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <p className="font-semibold">{y.place_name}</p>
+                    <span className="text-[13px] font-semibold px-2 py-0.5 border-[1.5px] border-rule">{y.status}</span>
+                  </div>
+                  <p className="text-[14.5px] mt-1">{y.reason}</p>
+                  <p className="text-[13px] text-soft mt-1">Address: {y.address}</p>
+                  {y.owner_details && <p className="text-[13px] text-soft">Owner: {y.owner_details}</p>}
+                  <div className="flex gap-2 mt-2">
+                    {y.status !== "in_progress" && (
+                      <form action={setYellowStatus}>
+                        <input type="hidden" name="id" value={y.id} />
+                        <input type="hidden" name="status" value="in_progress" />
+                        <button className="btn-ghost px-3 py-1.5 text-sm font-semibold rounded-sm">Mark in progress</button>
+                      </form>
+                    )}
+                    {y.status !== "audited" && (
+                      <form action={setYellowStatus}>
+                        <input type="hidden" name="id" value={y.id} />
+                        <input type="hidden" name="status" value="audited" />
+                        <button className="btn-primary px-3 py-1.5 text-sm font-semibold rounded-sm">Mark audited</button>
+                      </form>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-soft text-[15px]">No requests filed.</p>
           )}
         </div>
       </div>

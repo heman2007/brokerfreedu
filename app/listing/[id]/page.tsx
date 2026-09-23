@@ -3,7 +3,7 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { ContactReveal, ReportButton, MarkFilledButton } from "@/components/ListingDetailClient";
-import type { Listing } from "@/lib/types";
+import { yearOfStudyLabel, type Listing } from "@/lib/types";
 
 export const revalidate = 0;
 
@@ -18,7 +18,7 @@ export default async function ListingDetail({ params }: { params: { id: string }
   const supabase = createClient();
   const { data: raw } = await supabase
     .from("listings")
-    .select("*, photos:listing_photos(id, path, position)")
+    .select("*, photos:listing_photos(id, path, position, kind)")
     .eq("id", params.id)
     .single();
 
@@ -30,12 +30,14 @@ export default async function ListingDetail({ params }: { params: { id: string }
   } = await supabase.auth.getUser();
 
   const total = Number(listing.rent) + Number(listing.maintenance);
-  const restrictions = [
-    listing.curfew ? `Curfew ${listing.curfew}` : "",
-    listing.guests === "no" ? "Guests not allowed" : listing.guests === "yes" ? "Guests allowed" : "",
-    listing.nonveg === "no" ? "No non-veg" : listing.nonveg === "yes" ? "Non-veg allowed" : "",
-    listing.pets === "yes" ? "Pets allowed" : listing.pets === "no" ? "No pets" : "",
-  ].filter(Boolean);
+
+  const posterLine =
+    listing.poster_role === "owner"
+      ? "the owner"
+      : `${yearOfStudyLabel(listing.poster_admission_year)} ${listing.poster_college || "DU"} student`;
+
+  const mapHref =
+    listing.lat && listing.lng ? `https://www.openstreetmap.org/?mlat=${listing.lat}&mlon=${listing.lng}#map=18/${listing.lat}/${listing.lng}` : null;
 
   return (
     <section className="py-10">
@@ -48,26 +50,30 @@ export default async function ListingDetail({ params }: { params: { id: string }
             <h1 className="text-[28px] font-bold tracking-tight mb-1">
               {listing.type} in {listing.locality}
             </h1>
-            <p className="text-soft text-[15px] mb-5">
-              {listing.campus}
-              {listing.walk_minutes ? ` · about ${listing.walk_minutes} minutes on foot` : ""} · Floor{" "}
-              {listing.floor || "—"}
-              {listing.lift ? ", lift" : ", no lift"}
-            </p>
+            <p className="text-soft text-[15px] mb-1">{listing.address}</p>
+            {mapHref && (
+              <a href={mapHref} target="_blank" rel="noopener noreferrer" className="text-[14px] text-indigo underline">
+                View pinned location on the map
+              </a>
+            )}
 
             {listing.photos && listing.photos.length > 0 ? (
-              <div className="grid grid-cols-2 gap-2.5">
+              <div className="grid grid-cols-2 gap-2.5 mt-4">
                 {listing.photos.map((p, i) => (
                   <div
                     key={p.id}
                     className={`relative border-[1.5px] border-rule ${i === 0 ? "col-span-2 aspect-[16/10]" : "aspect-[4/3]"}`}
                   >
-                    <Image src={p.path} alt={`Photo ${i + 1}`} fill className="object-cover" />
+                    {(p as any).kind === "video" ? (
+                      <video src={p.path} controls className="w-full h-full object-cover" />
+                    ) : (
+                      <Image src={p.path} alt={`Photo ${i + 1}`} fill className="object-cover" />
+                    )}
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="border-2 border-dashed border-rule p-8 text-center text-soft">No photos on this listing</div>
+              <div className="border-2 border-dashed border-rule p-8 text-center text-soft mt-4">No photos on this listing</div>
             )}
 
             {listing.honest_note && (
@@ -79,17 +85,21 @@ export default async function ListingDetail({ params }: { params: { id: string }
               </>
             )}
 
-            {restrictions.length > 0 && (
+            {listing.reason_leaving && (
               <>
-                <h3 className="font-semibold text-lg mb-1">House rules</h3>
-                <p className="mb-4">{restrictions.join(" · ")}</p>
+                <h3 className="font-semibold text-lg mb-1">Reason for leaving</h3>
+                <p className="mb-4">{listing.reason_leaving}</p>
+              </>
+            )}
+            {listing.preferred_tenants && (
+              <>
+                <h3 className="font-semibold text-lg mb-1">Preferred tenants</h3>
+                <p className="mb-4">{listing.preferred_tenants}</p>
               </>
             )}
 
             <p className="text-[14px] text-soft">
-              Posted {fmtDate(listing.created_at)} by{" "}
-              {listing.poster_role === "owner" ? "the owner" : "a student moving out"}
-              {listing.poster_college ? `, ${listing.poster_college}` : ""}.
+              Posted {fmtDate(listing.created_at)} by {posterLine}.
             </p>
             <ReportButton listingId={listing.id} />
             <MarkFilledButton listingId={listing.id} isOwnListing={!!user && user.id === listing.owner_id} />
@@ -116,14 +126,6 @@ export default async function ListingDetail({ params }: { params: { id: string }
                   <tr className="border-b border-rule-thin">
                     <td className="py-2">Maintenance</td>
                     <td className="py-2 text-right font-semibold">{listing.maintenance ? money(listing.maintenance) : "None"}</td>
-                  </tr>
-                  <tr className="border-b border-rule-thin">
-                    <td className="py-2">Electricity</td>
-                    <td className="py-2 text-right font-semibold">{listing.electricity || "—"}</td>
-                  </tr>
-                  <tr className="border-b border-rule-thin">
-                    <td className="py-2">Food</td>
-                    <td className="py-2 text-right font-semibold">{listing.food ? "Included" : "Not included"}</td>
                   </tr>
                   <tr className="border-b border-rule-thin">
                     <td className="py-2">Brokerage</td>
@@ -157,7 +159,6 @@ export default async function ListingDetail({ params }: { params: { id: string }
               <ContactReveal
                 ownerName={listing.owner_name}
                 ownerPhone={listing.owner_phone}
-                posterName={listing.poster_name}
                 posterPhone={listing.poster_phone}
                 posterRole={listing.poster_role}
               />

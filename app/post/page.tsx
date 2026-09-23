@@ -30,28 +30,16 @@ export default async function PostPage() {
 
   const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single();
 
-  if (!profile || !profile.name) {
+  const incomplete = !profile || !profile.name || !profile.college || !profile.phone;
+  if (incomplete) {
     return (
       <section className="py-12">
         <div className="max-w-[1080px] mx-auto px-5">
-          <CompleteProfile userId={user.id} email={user.email ?? null} />
-        </div>
-      </section>
-    );
-  }
-
-  if (profile.role === "student" && !profile.verified) {
-    return (
-      <section className="py-12">
-        <div className="max-w-[1080px] mx-auto px-5">
-          <h2 className="text-[26px] font-bold tracking-tight mb-2">Verification pending</h2>
-          <p className="text-[17.5px] text-soft max-w-[60ch] mb-6">
-            You can post once your student ID is verified. Head to your account page to upload it
-            if you haven&apos;t already.
-          </p>
-          <Link href="/account" className="btn-ghost inline-block px-5 py-3 font-semibold rounded-sm">
-            Go to my account
-          </Link>
+          <CompleteProfile
+            userId={user.id}
+            email={user.email ?? null}
+            defaultName={(user.user_metadata?.full_name as string | undefined) ?? undefined}
+          />
         </div>
       </section>
     );

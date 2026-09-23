@@ -2,14 +2,17 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import AuthFlows from "@/components/AuthFlows";
 import CompleteProfile from "@/components/CompleteProfile";
-import IdUpload from "@/components/IdUpload";
 import ListingCard from "@/components/ListingCard";
 import SignOutButton from "@/components/SignOutButton";
 import type { Listing } from "@/lib/types";
 
 export const revalidate = 0;
 
-export default async function AccountPage() {
+export default async function AccountPage({
+  searchParams,
+}: {
+  searchParams: { error?: string };
+}) {
   const supabase = createClient();
   const {
     data: { user },
@@ -19,6 +22,14 @@ export default async function AccountPage() {
     return (
       <section className="py-12">
         <div className="max-w-[1080px] mx-auto px-5">
+          {searchParams.error === "not_du_email" && (
+            <div className="notice-card rounded-sm p-4 mb-6" style={{ borderColor: "var(--signal)" }}>
+              <p className="text-[15px]">
+                That Google account isn&apos;t on a DU domain, so it was signed out. Use a du.ac.in
+                Google account, or sign in with your DU email instead.
+              </p>
+            </div>
+          )}
           <AuthFlows />
         </div>
       </section>
@@ -27,14 +38,16 @@ export default async function AccountPage() {
 
   const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single();
 
-  if (!profile || !profile.name) {
-    // Signed in (e.g. clicked the magic link) but the profile's name never
-    // got saved — let them finish right here instead of bouncing back into
-    // email sign-in, which would just resend a link to an already-signed-in user.
+  const incomplete = !profile || !profile.name || !profile.college || !profile.phone;
+  if (incomplete) {
     return (
       <section className="py-12">
         <div className="max-w-[1080px] mx-auto px-5">
-          <CompleteProfile userId={user.id} email={user.email ?? null} />
+          <CompleteProfile
+            userId={user.id}
+            email={user.email ?? null}
+            defaultName={(user.user_metadata?.full_name as string | undefined) ?? undefined}
+          />
         </div>
       </section>
     );
@@ -42,7 +55,7 @@ export default async function AccountPage() {
 
   const { data: mineRaw } = await supabase
     .from("listings")
-    .select("*, photos:listing_photos(id, path, position)")
+    .select("*, photos:listing_photos(id, path, position, kind)")
     .eq("owner_id", user.id)
     .order("created_at", { ascending: false });
 
@@ -60,20 +73,11 @@ export default async function AccountPage() {
             <p className="text-[16px] text-soft">
               {profile.role === "owner" ? "Owner account" : "Student account"}
               {profile.college ? ` · ${profile.college}` : ""}
-              {profile.role === "student" ? ` · ${profile.verified ? "DU email verified" : "Verification pending"}` : ""}
+              {profile.course ? ` · ${profile.course}` : ""}
             </p>
           </div>
           <SignOutButton />
         </div>
-
-        {profile.role === "student" && !profile.verified && !profile.id_upload_path && (
-          <IdUpload userId={user.id} />
-        )}
-        {profile.role === "student" && !profile.verified && profile.id_upload_path && (
-          <p className="notice-card rounded-sm p-4 mt-4 text-[14.5px]">
-            ID uploaded — waiting on an admin to verify it before you can post.
-          </p>
-        )}
 
         <div className="flex gap-3 mt-6">
           <Link href="/post" className="btn-primary inline-block px-5 py-3 font-semibold rounded-sm">

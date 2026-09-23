@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { SignForm, BuildingReportForm } from "@/components/PetitionForms";
+import { SignForm } from "@/components/PetitionForms";
 import { PETITION_TARGET } from "@/lib/types";
 
 export const revalidate = 0;
@@ -12,14 +12,9 @@ export default async function PetitionPage() {
 
   const { data: signatures } = await supabase
     .from("petition_signatures")
-    .select("id, name, college, message, created_at")
+    .select("id, name, college, created_at")
     .order("created_at", { ascending: false })
     .limit(500);
-
-  const { data: reportCounts } = await supabase
-    .from("building_reports_public")
-    .select("locality, count")
-    .order("count", { ascending: false });
 
   let profileCollege: string | null = null;
   if (user) {
@@ -87,7 +82,11 @@ export default async function PetitionPage() {
                 <div className="h-5 border-[1.5px] border-rule bg-notice mt-3 mb-2">
                   <div className="h-full" style={{ width: `${pct}%`, background: "var(--signal)" }} />
                 </div>
-                <SignForm alreadySigned={alreadySigned} defaultCollege={profileCollege} />
+                {alreadySigned ? (
+                  <p className="font-semibold mt-3">You&apos;ve signed this. Thanks.</p>
+                ) : (
+                  <SignForm alreadySigned={alreadySigned} defaultCollege={profileCollege} />
+                )}
               </div>
 
               <h3 className="font-semibold text-lg mt-7 mb-2">Recent signatures</h3>
@@ -96,7 +95,6 @@ export default async function PetitionPage() {
                   signatures.map((s) => (
                     <div key={s.id} className="py-1.5 border-b border-rule-thin last:border-none">
                       <strong>{s.name}</strong> · {s.college || "DU"}
-                      {s.message && <><br /><span className="text-soft">{s.message}</span></>}
                     </div>
                   ))
                 ) : (
@@ -110,29 +108,32 @@ export default async function PetitionPage() {
 
       <section className="py-12">
         <div className="max-w-[1080px] mx-auto px-5">
-          <h2 className="text-[26px] font-bold tracking-tight mb-2">Report a building condition</h2>
-          <p className="text-[17.5px] text-soft max-w-[70ch] mb-6">
-            Cracks, seepage, exposed wiring, blocked exits, illegal extra floors. Reports feed the
-            petition as locality-level counts. <strong className="text-ink">Addresses and owner
-            names are never published</strong> — only an admin sees them, and only to pass
-            evidence to the authority the petition names.
+          <h2 className="text-[26px] font-bold tracking-tight mb-4">Rent Control</h2>
+          <p className="text-[17.5px] text-soft max-w-[70ch] mb-7">
+            The other half of this problem: what students actually pay near campus, for what they
+            actually get.
           </p>
-          <div className="grid grid-cols-1 md:grid-cols-[1fr_340px] gap-9 items-start">
-            <BuildingReportForm />
-            <aside>
-              <h3 className="font-semibold text-lg mb-2">Reports by locality</h3>
-              {reportCounts && reportCounts.length > 0 ? (
-                reportCounts.map((r) => (
-                  <div key={r.locality} className="flex justify-between gap-3 py-2 border-b border-rule-thin text-[15px]">
-                    <span>{r.locality}</span>
-                    <strong>{r.count}</strong>
-                  </div>
-                ))
-              ) : (
-                <p className="text-soft text-[15px]">No reports filed yet.</p>
-              )}
-            </aside>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div className="notice-card rounded-sm p-5">
+              <div className="text-[38px] font-bold tracking-tight leading-none mb-2">₹15,000<small className="text-[15px] font-medium text-soft">/mo</small></div>
+              <h3 className="font-semibold mb-1">A single, windowless room</h3>
+              <p className="text-[15px] text-soft">
+                Built-in kitchen and bathroom, no window, in areas like Kamla Nagar — routinely
+                priced around this mark.
+              </p>
+            </div>
+            <div className="notice-card rounded-sm p-5">
+              <div className="text-[38px] font-bold tracking-tight leading-none mb-2">₹12,000–15,000<small className="text-[15px] font-medium text-soft">/mo avg</small></div>
+              <h3 className="font-semibold mb-1">A shared PG room, 3–4 beds</h3>
+              <p className="text-[15px] text-soft">
+                Multiple students sharing one room at this price point, near the same campuses.
+              </p>
+            </div>
           </div>
+          <p className="text-[13px] text-soft mt-5">
+            Figures reported by students on this platform, not an official survey — treat them as
+            a snapshot of what people are actually paying, not a government rate.
+          </p>
         </div>
       </section>
     </>

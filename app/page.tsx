@@ -138,7 +138,7 @@ export default async function HomePage() {
               <span className="text-[13px] font-bold text-indigo block mb-1.5">Step 3</span>
               <h3 className="font-semibold text-lg mb-1">They talk to the owner</h3>
               <p className="text-[15px] text-soft">
-                Contact details are shown to everyone, free, no sign-up wall. Nobody takes a cut.
+                Contact details are visible to every signed-in student, free. Nobody takes a cut.
               </p>
             </div>
           </div>

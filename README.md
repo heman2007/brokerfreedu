@@ -15,27 +15,41 @@ deployed on **Vercel**. No payment flow anywhere in the product, on purpose.
    [`supabase/schema.sql`](supabase/schema.sql), and run it. This creates every table, its
    row-level security policies, and the two storage buckets (`listing-photos`, public;
    `id-uploads`, private).
-3. Go to **Project Settings → API** and copy:
+3. Then run [`supabase/migration_2.sql`](supabase/migration_2.sql) the same way — a second
+   SQL Editor query. This adds the extended sign-up fields (course, admission year, area),
+   video support on listings, and the Danger Zone / Yellow Zone tables and storage bucket.
+4. Go to **Project Settings → API** and copy:
    - `Project URL` → `NEXT_PUBLIC_SUPABASE_URL`
    - `anon public` key → `NEXT_PUBLIC_SUPABASE_ANON_KEY`
    - `service_role` key → `SUPABASE_SERVICE_ROLE_KEY` (keep this one secret — it bypasses every
      RLS rule)
 
-## 2. Turn on the two sign-in methods
+## 2. Turn on the sign-in methods
 
 Go to **Authentication → Providers**:
 
-- **Email** — should already be on. This is how students sign in (a magic link, no password).
-  Under **Authentication → URL Configuration**, set:
+- **Email** — should already be on. This is one of two ways students sign in (a magic link, no
+  password). Under **Authentication → URL Configuration**, set:
   - Site URL: your deployed URL (e.g. `https://brokerfreedu.vercel.app`)
   - Redirect URLs: add `https://brokerfreedu.vercel.app/auth/callback` (and
     `http://localhost:3000/auth/callback` while developing)
+- **Google** — the other student sign-in option. In Google Cloud Console, create an OAuth 2.0
+  Client ID (Web application type), add `https://<your-project>.supabase.co/auth/v1/callback`
+  as an authorized redirect URI, then paste the Client ID and Secret into Supabase's Google
+  provider settings and toggle it on. **Domain restriction is enforced in the app's own code**
+  (`app/auth/callback/route.ts` checks the signed-in email against `isDuEmail()` in
+  `lib/types.ts` and force-signs-out anyone outside it) — Google's own `hd` parameter is only a
+  UI hint and doesn't actually block other domains on its own, so don't rely on it alone.
 - **Phone** — this is how owners sign in with an OTP over SMS. Supabase needs a real SMS
   provider wired in to send them: go to **Authentication → Providers → Phone**, turn it on, and
-  connect **Twilio**, **MessageBird**, or **Vonage** (you'll need an account and a small budget
-  with one of these — none are free, since SMS costs money per message). Until this is
-  configured, the owner sign-up flow will show an error when it tries to send an OTP; the
-  student flow works immediately since it only needs email.
+  connect **Twilio**, **MessageBird**, or **Vonage** (a small per-SMS cost, no free option).
+  Until this is configured, the owner sign-up flow will error when it tries to send an OTP; the
+  student flows work immediately since they don't need it.
+
+**On the DU-domain check:** `isDuEmail()` auto-passes anything ending in `du.ac.in` (catches
+`ss.du.ac.in`, `srcc.du.ac.in`, etc.), plus anything you add to the `KNOWN_DU_DOMAINS` array in
+`lib/types.ts` for colleges on their own separate domain. Add confirmed ones there as you find
+them — sign-up is a hard block for domains outside this list, per the current design.
 
 ## 3. Run it locally
 
@@ -71,32 +85,46 @@ verifications, resolve or act on listing reports, see phone numbers appearing on
 (the broker-detection signal), and read full building-condition reports including the address
 that the public page never shows.
 
-## How the pieces map to the build brief
+## How the pieces map to what's been built
 
 | Feature | Where |
 |---|---|
 | Two account types, one profile table with a `role` | `supabase/schema.sql` (`profiles`), `components/AuthFlows.tsx` |
-| Student verification (`.du.ac.in` auto, else manual ID review) | `app/auth/callback/route.ts`, `components/IdUpload.tsx`, `app/admin/page.tsx` |
+| Sign-up fields: name, college, course, admission year, area, DU email, private phone | `components/AuthFlows.tsx`, `components/CompleteProfile.tsx`, `migration_2.sql` |
+| DU-domain-only sign-in (email + Google), hard block on other domains | `lib/types.ts` (`isDuEmail`, `KNOWN_DU_DOMAINS`), `app/auth/callback/route.ts` |
 | Owner phone OTP | `components/AuthFlows.tsx` (`OwnerForm`) |
-| Listing with date-of-leaving as the headline field | `components/PostForm.tsx`, `app/listing/[id]/page.tsx` |
-| Owner-consent gate on publishing a phone number | `components/PostForm.tsx` (the two checkboxes) |
-| Broker/spam defenses (report button, phone-reuse flag) | `components/ListingDetailClient.tsx`, `suspicious_phone_numbers` view in `schema.sql`, `app/admin/page.tsx` |
-| Browse/filter/sort by locality, rent, type, date | `app/browse/page.tsx`, `components/Filters.tsx` |
-| Petition with one-signature-per-person | `app/petition/page.tsx`, `petition_signatures` table (primary key = user id) |
-| Building reports public as locality counts only | `building_reports_public` view in `schema.sql` — the base table with addresses is admin-only |
+| Sign out visible in the header, not buried | `components/Header.tsx`, `components/SignOutButton.tsx` |
+| Browsing/listings gated to signed-in users | `middleware.ts` (`PROTECTED_PREFIXES`) |
+| Listing: address + pinpoint, photos/videos, reason for leaving, preferred tenants, direct owner phone | `components/PostForm.tsx` |
+| Anonymous student byline ("Posted by a third year Hindu College student") | `lib/types.ts` (`yearOfStudyLabel`), `components/ListingCard.tsx`, `app/listing/[id]/page.tsx` |
+| Broker/spam defenses (report button, phone-reuse flag) | `components/ListingDetailClient.tsx`, `suspicious_phone_numbers` view, `app/admin/page.tsx` |
+| Petition — sign with just a name, college pulled from profile | `app/petition/page.tsx`, `components/PetitionForms.tsx` |
+| Rent Control section | `app/petition/page.tsx` |
+| Danger Zone — public per-property alerts, address/owner admin-only | `app/danger-zone/page.tsx`, `components/DangerZoneForm.tsx`, `danger_zone_public` view |
+| Yellow Zone — audit request queue + public audited count | `app/yellow-zone/page.tsx`, `components/YellowZoneForm.tsx`, `yellow_zone_audited_count` view |
+| Admin panel: verifications, listing reports, Danger Zone review, Yellow Zone status | `app/admin/page.tsx` |
+| Satyagraha badge in header | `components/Header.tsx` — **placeholder text/photo, confirm with Deepanshu before shipping** |
 
-## What's intentionally out of this version
+## Known simplifications, worth knowing about
 
-Per the build order in the original brief, items 6–8 (saved-search alerts, map view) are not
-built yet — the admin panel (item 6) is included since it's load-bearing for moderation from
-day one. No messaging threads yet either; the fastest safe path in v1 is showing contact details
-directly, same as the brief's fallback.
+- **Pinpoint location** uses the browser's own GPS ("Use my current location"), not an
+  interactive map picker — it only gives a good result if whoever's posting is standing at the
+  property when they tap it. A real map-based picker (Leaflet + OpenStreetMap, free) is a
+  reasonable next upgrade if the GPS approach turns out to be unreliable in practice.
+- **`KNOWN_DU_DOMAINS`** in `lib/types.ts` starts empty. Every domain not ending in `du.ac.in`
+  is currently rejected at sign-up — add specific ones here as you confirm a college uses an
+  independent domain.
+- **Video uploads** are capped at 40MB client-side and go straight into Supabase Storage with
+  no compression — keep an eye on storage usage on the free tier once volume picks up.
+- **The old `building_reports` table** from the first version of this app is still in the
+  database (harmless, unused) — Danger Zone (`danger_zone_reports`) replaced it. Fine to ignore
+  or drop later.
 
 ## Legal reminders (see also the footer and the safety notice on every listing)
 
 - This platform never touches money and is not a party to any tenancy.
-- Publishing a phone number without consent is a real exposure under India's Digital Personal
-  Data Protection Act, 2023 — don't remove the consent gate in the post form.
-- Keep building-condition reports aggregated by locality on the public page. Never expose
-  addresses or names outside the admin panel; that's what invites defamation claims against a
-  student-run site.
+- Owner phone numbers are now collected and published directly with no in-app consent gate —
+  this assumes permission is being handled outside the app, as decided. If that changes, the
+  consent-checkbox pattern from the first version of `PostForm.tsx` is easy to bring back.
+- Keep Danger Zone and Yellow Zone addresses/owner details admin-only, same reasoning as before:
+  it's what keeps a student-run safety board from becoming a defamation liability.

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { COLLEGES, LOCALITIES } from "@/lib/types";
+import { LOCALITIES, isDuEmail } from "@/lib/types";
 
 export default function AuthFlows() {
   const [tab, setTab] = useState<"student" | "owner">("student");
@@ -12,8 +12,8 @@ export default function AuthFlows() {
     <div>
       <h2 className="text-[26px] font-bold tracking-tight mb-2">Two kinds of account</h2>
       <p className="text-[17.5px] text-soft max-w-[60ch] mb-7">
-        Browsing needs no account at all — contact details on every listing are open to everyone.
-        You only need one to post.
+        Listings, contact details, and everything else here need a signed-in account — that's
+        what keeps this a DU-only board. You only need to pick one below.
       </p>
       <div className="flex border-b-[1.5px] border-rule mb-6">
         <button
@@ -36,12 +36,16 @@ export default function AuthFlows() {
 
 function StudentForm() {
   const [name, setName] = useState("");
-  const [college, setCollege] = useState<string>(COLLEGES[0]);
+  const [college, setCollege] = useState("");
+  const [course, setCourse] = useState("");
+  const [admissionYear, setAdmissionYear] = useState("");
+  const [area, setArea] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [err, setErr] = useState("");
   const [sent, setSent] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [googleBusy, setGoogleBusy] = useState(false);
   const supabase = createClient();
 
   async function submit() {
@@ -54,18 +58,48 @@ function StudentForm() {
       setErr("That email doesn't look right.");
       return;
     }
+    if (!isDuEmail(email.trim())) {
+      setErr("Sign-up is only open to DU email addresses (ending in du.ac.in).");
+      return;
+    }
     setBusy(true);
-    const redirect = new URL(`${location.origin}/auth/callback`);
-    redirect.searchParams.set("name", name.trim());
-    redirect.searchParams.set("college", college);
-    redirect.searchParams.set("phone", phone.trim());
+
+    // Save what they typed BEFORE sending the email — the magic-link
+    // round trip can't reliably carry it via URL query params.
+    const { error: pendingErr } = await supabase.from("pending_signups").upsert({
+      email: email.trim(),
+      name: name.trim(),
+      college: college.trim(),
+      course: course.trim(),
+      admission_year: admissionYear ? Number(admissionYear) : null,
+      area: area.trim(),
+      phone: phone.trim(),
+    });
+    if (pendingErr) {
+      setBusy(false);
+      setErr("Couldn't save your details. Try again.");
+      return;
+    }
+
     const { error } = await supabase.auth.signInWithOtp({
       email: email.trim(),
-      options: { emailRedirectTo: redirect.toString() },
+      options: { emailRedirectTo: `${location.origin}/auth/callback` },
     });
     setBusy(false);
     if (error) setErr(error.message);
     else setSent(true);
+  }
+
+  async function withGoogle() {
+    setGoogleBusy(true);
+    await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${location.origin}/auth/callback`,
+        queryParams: { hd: "du.ac.in", prompt: "select_account" },
+      },
+    });
+    // browser redirects away; no further local state needed
   }
 
   if (sent) {
@@ -82,22 +116,46 @@ function StudentForm() {
 
   return (
     <div className="max-w-[500px]">
+      <button
+        onClick={withGoogle}
+        disabled={googleBusy}
+        className="btn-ghost w-full px-5 py-2.5 font-semibold rounded-sm mb-3 flex items-center justify-center gap-2"
+      >
+        {googleBusy ? "Redirecting…" : "Continue with Google (DU account)"}
+      </button>
+      <p className="text-[13px] text-soft mb-5">
+        Only Google accounts on a du.ac.in domain will work — anything else will be signed out
+        automatically.
+      </p>
+      <div className="flex items-center gap-3 mb-5">
+        <div className="h-px flex-1 bg-rule-thin" />
+        <span className="text-[13px] text-soft">or use your DU email</span>
+        <div className="h-px flex-1 bg-rule-thin" />
+      </div>
+
       <div className="notice-card rounded-sm p-5">
         <h3 className="font-semibold text-lg mb-4">Student account</h3>
         <Field label="Your name">
           <input className="field-input w-full px-2.5 py-2 text-[15px]" value={name} onChange={(e) => setName(e.target.value)} placeholder="Full name" />
         </Field>
         <Field label="College or department">
-          <select className="field-input w-full px-2.5 py-2 text-[15px]" value={college} onChange={(e) => setCollege(e.target.value)}>
-            {COLLEGES.map((c) => (
-              <option key={c}>{c}</option>
-            ))}
-          </select>
+          <input className="field-input w-full px-2.5 py-2 text-[15px]" value={college} onChange={(e) => setCollege(e.target.value)} placeholder="e.g. Hindu College" />
         </Field>
-        <Field label="Email" hint="A college address ending in du.ac.in verifies you instantly. Anything else goes to an admin, who'll ask for a photo of your ID card.">
+        <Field label="Course">
+          <input className="field-input w-full px-2.5 py-2 text-[15px]" value={course} onChange={(e) => setCourse(e.target.value)} placeholder="e.g. BA Hons Economics" />
+        </Field>
+        <div className="grid grid-cols-2 gap-3.5">
+          <Field label="Admission year">
+            <input type="number" inputMode="numeric" className="field-input w-full px-2.5 py-2 text-[15px]" value={admissionYear} onChange={(e) => setAdmissionYear(e.target.value)} placeholder="2023" />
+          </Field>
+          <Field label="Area you live in">
+            <input className="field-input w-full px-2.5 py-2 text-[15px]" value={area} onChange={(e) => setArea(e.target.value)} placeholder="e.g. Kamla Nagar" />
+          </Field>
+        </div>
+        <Field label="Email" hint="Must end in du.ac.in — this is what keeps the board DU-only.">
           <input type="email" className="field-input w-full px-2.5 py-2 text-[15px]" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@ramjas.du.ac.in" />
         </Field>
-        <Field label="Phone (shown on listings you post)">
+        <Field label="Phone" hint="Kept private — never shown on the website or shared publicly. Only used to reach you about your own listings.">
           <input inputMode="tel" className="field-input w-full px-2.5 py-2 text-[15px]" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="10-digit number" />
         </Field>
         <button onClick={submit} disabled={busy} className="btn-primary px-5 py-2.5 font-semibold rounded-sm">
@@ -162,7 +220,7 @@ function OwnerForm() {
     }
     await supabase
       .from("profiles")
-      .update({ role: "owner", name: name.trim(), phone: normalizedPhone(), college: area, verified: false })
+      .update({ role: "owner", name: name.trim(), phone: normalizedPhone(), area, verified: false })
       .eq("id", data.user.id);
     setBusy(false);
     router.push("/post");

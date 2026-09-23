@@ -39,8 +39,7 @@ export default async function BrowsePage({
           {listings.length} place{listings.length === 1 ? "" : "s"} open
         </h2>
         <p className="text-[17.5px] text-soft max-w-[60ch] mb-6">
-          Sorted by who&apos;s leaving soonest. Contact details are on every listing, visible
-          without signing in.
+          Sorted by who&apos;s leaving soonest. Contact details are on every listing.
         </p>
         <Filters />
         {listings.length > 0 ? (

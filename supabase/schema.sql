@@ -59,6 +59,34 @@ create trigger on_auth_user_created
   after insert on auth.users
   for each row execute procedure public.handle_new_user();
 
+-- ---------- pending signups ----------
+-- Holds what a student typed on the sign-up form BEFORE their email is
+-- verified. The magic-link email round-trip is not reliable for carrying
+-- this data via URL query params (Supabase's own redirect rewriting can
+-- drop them), so we stash it here keyed by email and the callback route
+-- picks it up once the user is actually authenticated.
+create table if not exists pending_signups (
+  email text primary key,
+  name text not null,
+  college text,
+  phone text,
+  created_at timestamptz not null default now()
+);
+
+alter table pending_signups enable row level security;
+
+drop policy if exists "pending: anyone insert" on pending_signups;
+create policy "pending: anyone insert" on pending_signups for insert
+  with check (true);
+
+drop policy if exists "pending: read own email" on pending_signups;
+create policy "pending: read own email" on pending_signups for select
+  using (email = (auth.jwt() ->> 'email'));
+
+drop policy if exists "pending: delete own email" on pending_signups;
+create policy "pending: delete own email" on pending_signups for delete
+  using (email = (auth.jwt() ->> 'email'));
+
 -- ---------- listings ----------
 create table if not exists listings (
   id uuid primary key default gen_random_uuid(),

@@ -7,13 +7,11 @@ import { createClient } from "@/lib/supabase/client";
 export function ContactReveal({
   ownerName,
   ownerPhone,
-  posterName,
   posterPhone,
   posterRole,
 }: {
   ownerName: string | null;
   ownerPhone: string | null;
-  posterName: string | null;
   posterPhone: string | null;
   posterRole: string;
 }) {
@@ -35,16 +33,14 @@ export function ContactReveal({
           </p>
         </>
       ) : (
-        <p className="text-[14.5px] text-soft mb-3">
-          The owner hasn&apos;t consented to their number being listed. Go through the person
-          moving out.
-        </p>
+        <p className="text-[14.5px] text-soft mb-3">No owner number on file for this listing.</p>
       )}
       {posterPhone && (
         <>
+          {/* Students are never named here, even next to their own number —
+              that's the whole point of the anonymous posting. */}
           <p className="text-[14px] text-soft mb-1">
-            {posterRole === "owner" ? "Also" : "Outgoing tenant"}
-            {posterName ? ` · ${posterName}` : ""}
+            {posterRole === "owner" ? "Also" : "Backup contact (outgoing tenant)"}
           </p>
           <p className="text-[20px] font-bold tracking-tight">
             <a href={`tel:${posterPhone}`}>{posterPhone}</a>

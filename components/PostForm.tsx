@@ -5,74 +5,81 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { LOCALITIES, LISTING_TYPES, type Profile } from "@/lib/types";
 
+type MediaItem = { file: File; kind: "photo" | "video"; previewUrl: string };
+const MAX_VIDEO_MB = 40;
+
 export default function PostForm({ profile, userId }: { profile: Profile; userId: string }) {
   const isOwner = profile.role === "owner";
   const router = useRouter();
   const supabase = createClient();
 
-  const [photos, setPhotos] = useState<File[]>([]);
-  const [previews, setPreviews] = useState<string[]>([]);
+  const [media, setMedia] = useState<MediaItem[]>([]);
   const [type, setType] = useState<string>(LISTING_TYPES[0]);
   const [locality, setLocality] = useState<string>(LOCALITIES[0]);
-  const [campus, setCampus] = useState("North Campus");
-  const [walk, setWalk] = useState("");
-  const [floor, setFloor] = useState("");
-  const [lift, setLift] = useState(false);
-  const [water, setWater] = useState("Municipal, regular");
-  const [backup, setBackup] = useState("no");
+  const [address, setAddress] = useState("");
+  const [lat, setLat] = useState("");
+  const [lng, setLng] = useState("");
+  const [locating, setLocating] = useState(false);
   const [rent, setRent] = useState("");
   const [deposit, setDeposit] = useState("");
   const [maint, setMaint] = useState("");
-  const [electricity, setElectricity] = useState("Sub-meter, actual units");
-  const [food, setFood] = useState(false);
   const [leaving, setLeaving] = useState("");
-  const [gender, setGender] = useState("Any");
-  const [curfew, setCurfew] = useState("");
-  const [guests, setGuests] = useState("");
-  const [nonveg, setNonveg] = useState("");
-  const [pets, setPets] = useState("");
-  const [honest, setHonest] = useState("");
-  const [oName, setOName] = useState(isOwner ? profile.name ?? "" : "");
+  const [reasonLeaving, setReasonLeaving] = useState("");
+  const [preferredTenants, setPreferredTenants] = useState("");
   const [oPhone, setOPhone] = useState(isOwner ? profile.phone ?? "" : "");
-  const [myPhone, setMyPhone] = useState(profile.phone ?? "");
-  const [consent, setConsent] = useState(false);
-  const [noConsent, setNoConsent] = useState(false);
+  const [oName, setOName] = useState(isOwner ? profile.name ?? "" : "");
+  const [myPhone, setMyPhone] = useState(isOwner ? "" : profile.phone ?? "");
+  const [honest, setHonest] = useState("");
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
 
-  function addPhotos(files: FileList) {
-    const room = 4 - photos.length;
+  function addFiles(files: FileList) {
+    const room = 6 - media.length;
     const next = Array.from(files).slice(0, room);
-    setPhotos((p) => [...p, ...next]);
-    next.forEach((f) => {
-      const reader = new FileReader();
-      reader.onload = () => setPreviews((p) => [...p, reader.result as string]);
-      reader.readAsDataURL(f);
+    for (const f of next) {
+      const isVideo = f.type.startsWith("video/");
+      if (isVideo && f.size > MAX_VIDEO_MB * 1024 * 1024) {
+        setErr(`${f.name} is over ${MAX_VIDEO_MB}MB — trim it or pick a shorter clip.`);
+        continue;
+      }
+      setMedia((m) => [...m, { file: f, kind: isVideo ? "video" : "photo", previewUrl: URL.createObjectURL(f) }]);
+    }
+  }
+  function removeMedia(i: number) {
+    setMedia((m) => {
+      URL.revokeObjectURL(m[i].previewUrl);
+      return m.filter((_, idx) => idx !== i);
     });
   }
-  function removePhoto(i: number) {
-    setPhotos((p) => p.filter((_, idx) => idx !== i));
-    setPreviews((p) => p.filter((_, idx) => idx !== i));
+
+  function usePinpoint() {
+    if (!navigator.geolocation) {
+      setErr("Location isn't available on this browser — enter coordinates manually if you have them.");
+      return;
+    }
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setLat(pos.coords.latitude.toFixed(6));
+        setLng(pos.coords.longitude.toFixed(6));
+        setLocating(false);
+      },
+      () => {
+        setLocating(false);
+        setErr("Couldn't get your location — check location permission, or enter coordinates manually.");
+      }
+    );
   }
 
   async function submit() {
     setErr("");
-    if (photos.length === 0) return setErr("Add at least one photo. Three is better.");
+    if (media.length === 0) return setErr("Add at least one photo. Three is better.");
+    if (!address.trim()) return setErr("Add the address.");
     if (!rent) return setErr("Rent is required.");
     if (!deposit) return setErr("Security deposit is required — it's the number people get burned on.");
     if (!leaving) return setErr("The date of leaving is the whole point. Add it.");
-
-    let ownerPhoneFinal = oPhone.trim();
-    let posterPhoneFinal = isOwner ? oPhone.trim() : myPhone.trim();
-
-    if (!isOwner) {
-      if (consent === noConsent) return setErr("Tick exactly one of the two consent boxes about the owner's number.");
-      if (noConsent) ownerPhoneFinal = "";
-      if (consent && !ownerPhoneFinal) return setErr("Add the owner's number, or tick the second box.");
-      if (!posterPhoneFinal) return setErr("Add your own contact number so students can reach you.");
-    } else if (!ownerPhoneFinal) {
-      return setErr("Add your phone number.");
-    }
+    if (!oPhone.trim()) return setErr("Add the owner's phone number.");
+    if (isOwner && !oName.trim()) return setErr("Add your name.");
 
     setBusy(true);
 
@@ -82,30 +89,23 @@ export default function PostForm({ profile, userId }: { profile: Profile; userId
         owner_id: userId,
         type,
         locality,
-        campus,
-        walk_minutes: walk ? Number(walk) : null,
-        floor,
-        lift,
-        water,
-        backup,
+        address: address.trim(),
+        lat: lat ? Number(lat) : null,
+        lng: lng ? Number(lng) : null,
         rent: Number(rent),
         deposit: Number(deposit),
         maintenance: maint ? Number(maint) : 0,
-        electricity,
-        food,
         leaving_date: leaving,
-        gender_pref: gender,
-        curfew,
-        guests,
-        nonveg,
-        pets,
-        honest_note: isOwner ? null : honest,
-        owner_name: oName,
-        owner_phone: ownerPhoneFinal || null,
+        reason_leaving: reasonLeaving.trim() || null,
+        preferred_tenants: preferredTenants.trim() || null,
+        honest_note: isOwner ? null : honest.trim() || null,
+        owner_name: oName.trim() || null,
+        owner_phone: oPhone.trim(),
         poster_name: profile.name,
-        poster_phone: posterPhoneFinal,
+        poster_phone: isOwner ? oPhone.trim() : myPhone.trim() || null,
         poster_role: profile.role,
         poster_college: profile.college,
+        poster_admission_year: profile.admission_year,
         status: "active",
       })
       .select()
@@ -117,13 +117,16 @@ export default function PostForm({ profile, userId }: { profile: Profile; userId
       return;
     }
 
-    for (let i = 0; i < photos.length; i++) {
-      const file = photos[i];
-      const path = `${listing.id}/${i}-${Date.now()}.jpg`;
-      const { error: upErr } = await supabase.storage.from("listing-photos").upload(path, file);
+    for (let i = 0; i < media.length; i++) {
+      const item = media[i];
+      const ext = item.file.name.split(".").pop() || (item.kind === "video" ? "mp4" : "jpg");
+      const path = `${listing.id}/${i}-${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("listing-photos").upload(path, item.file);
       if (!upErr) {
         const { data: pub } = supabase.storage.from("listing-photos").getPublicUrl(path);
-        await supabase.from("listing_photos").insert({ listing_id: listing.id, path: pub.publicUrl, position: i });
+        await supabase
+          .from("listing_photos")
+          .insert({ listing_id: listing.id, path: pub.publicUrl, position: i, kind: item.kind });
       }
     }
 
@@ -138,19 +141,30 @@ export default function PostForm({ profile, userId }: { profile: Profile; userId
         {isOwner ? "Post a vacancy" : "Post the flat you're leaving"}
       </h2>
       <p className="text-[17.5px] text-soft max-w-[60ch] mb-7">
-        Four honest photos beat forty polished ones. Students say the room, the bathroom, the
-        kitchen and the building entrance are what they got lied to about.
+        Four honest photos beat forty polished ones. A short video walkthrough is even better —
+        students say the room, the bathroom, the kitchen and the building entrance are what they
+        got lied to about.
       </p>
 
-      <Fieldset title="Photos">
-        <input type="file" accept="image/*" multiple onChange={(e) => e.target.files && addPhotos(e.target.files)} />
-        <p className="text-[13px] text-soft mt-1">Up to 4 photos.</p>
+      {!isOwner && (
+        <div className="notice-card rounded-sm p-3.5 text-[14px] mb-5">
+          This goes up anonymously — students see it as &quot;Posted by a {"{year}"} {profile.college || "your college"} student,&quot; never your name.
+        </div>
+      )}
+
+      <Fieldset title="Photos and videos">
+        <input type="file" accept="image/*,video/*" multiple onChange={(e) => e.target.files && addFiles(e.target.files)} />
+        <p className="text-[13px] text-soft mt-1">Up to 6 files. Videos capped at {MAX_VIDEO_MB}MB each.</p>
         <div className="flex flex-wrap gap-2 mt-2.5">
-          {previews.map((src, i) => (
+          {media.map((m, i) => (
             <div key={i} className="relative">
-              <img src={src} alt="" className="w-[78px] h-[60px] object-cover border-[1.5px] border-rule" />
+              {m.kind === "video" ? (
+                <video src={m.previewUrl} className="w-[96px] h-[72px] object-cover border-[1.5px] border-rule" muted />
+              ) : (
+                <img src={m.previewUrl} alt="" className="w-[78px] h-[60px] object-cover border-[1.5px] border-rule" />
+              )}
               <button
-                onClick={() => removePhoto(i)}
+                onClick={() => removeMedia(i)}
                 className="absolute -top-1.5 -right-1.5 bg-ink text-paper rounded-full w-[21px] h-[21px] text-[13px] leading-none"
               >
                 ×
@@ -173,32 +187,20 @@ export default function PostForm({ profile, userId }: { profile: Profile; userId
             </select>
           </Field>
         </Row2>
-        <Row3>
-          <Field label="Nearest campus">
-            <select className="field-input w-full px-2.5 py-2 text-[15px]" value={campus} onChange={(e) => setCampus(e.target.value)}>
-              <option>North Campus</option><option>South Campus</option><option>Off-campus department</option>
-            </select>
-          </Field>
-          <Field label="Walk to campus (min)"><input type="number" inputMode="numeric" className="field-input w-full px-2.5 py-2 text-[15px]" value={walk} onChange={(e) => setWalk(e.target.value)} placeholder="12" /></Field>
-          <Field label="Floor"><input type="number" inputMode="numeric" className="field-input w-full px-2.5 py-2 text-[15px]" value={floor} onChange={(e) => setFloor(e.target.value)} placeholder="2" /></Field>
-        </Row3>
-        <Row3>
-          <Field label="Lift">
-            <select className="field-input w-full px-2.5 py-2 text-[15px]" value={lift ? "yes" : "no"} onChange={(e) => setLift(e.target.value === "yes")}>
-              <option value="no">No lift</option><option value="yes">Lift</option>
-            </select>
-          </Field>
-          <Field label="Water supply">
-            <select className="field-input w-full px-2.5 py-2 text-[15px]" value={water} onChange={(e) => setWater(e.target.value)}>
-              <option>Municipal, regular</option><option>Borewell/tanker</option><option>Irregular</option>
-            </select>
-          </Field>
-          <Field label="Power backup">
-            <select className="field-input w-full px-2.5 py-2 text-[15px]" value={backup} onChange={(e) => setBackup(e.target.value)}>
-              <option value="no">None</option><option value="inverter">Inverter</option><option value="generator">Generator</option>
-            </select>
-          </Field>
-        </Row3>
+        <Field label="Address">
+          <input className="field-input w-full px-2.5 py-2 text-[15px]" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="House/flat number, street" />
+        </Field>
+        <Field label="Pinpoint location (optional but helpful)">
+          <div className="flex gap-2 items-center flex-wrap">
+            <button type="button" onClick={usePinpoint} disabled={locating} className="btn-ghost px-3 py-2 text-sm font-semibold rounded-sm">
+              {locating ? "Getting location…" : "Use my current location"}
+            </button>
+            {lat && lng && <span className="text-[13.5px] text-soft">Pinned: {lat}, {lng}</span>}
+          </div>
+          <p className="text-[13px] text-soft mt-1">
+            Only works accurately if you&apos;re standing at the flat when you tap it — otherwise leave it blank.
+          </p>
+        </Field>
       </Fieldset>
 
       <Fieldset title="What it actually costs">
@@ -208,53 +210,20 @@ export default function PostForm({ profile, userId }: { profile: Profile; userId
           <Field label="Security deposit (₹)"><input type="number" inputMode="numeric" className="field-input w-full px-2.5 py-2 text-[15px]" value={deposit} onChange={(e) => setDeposit(e.target.value)} placeholder="22000" /></Field>
           <Field label="Maintenance (₹/mo)"><input type="number" inputMode="numeric" className="field-input w-full px-2.5 py-2 text-[15px]" value={maint} onChange={(e) => setMaint(e.target.value)} placeholder="0" /></Field>
         </Row3>
-        <Row2>
-          <Field label="Electricity billed as">
-            <select className="field-input w-full px-2.5 py-2 text-[15px]" value={electricity} onChange={(e) => setElectricity(e.target.value)}>
-              <option>Sub-meter, actual units</option><option>Fixed monthly amount</option><option>Shared and split</option>
-            </select>
-          </Field>
-          <Field label="Food included">
-            <select className="field-input w-full px-2.5 py-2 text-[15px]" value={food ? "yes" : "no"} onChange={(e) => setFood(e.target.value === "yes")}>
-              <option value="no">No</option><option value="yes">Yes (PG mess)</option>
-            </select>
-          </Field>
-        </Row2>
       </Fieldset>
 
-      <Fieldset title="When it opens up">
+      <Fieldset title="When it opens up, and why">
         <Field label="Date of leaving / available from">
           <input type="date" className="field-input w-full px-2.5 py-2 text-[15px]" value={leaving} onChange={(e) => setLeaving(e.target.value)} />
         </Field>
-        <p className="text-[13px] text-soft">This is the field the whole site is built on. Post it as soon as you know it.</p>
-      </Fieldset>
-
-      <Fieldset title="Who it's for, and the rules">
-        <Row2>
-          <Field label="Landlord's preference">
-            <select className="field-input w-full px-2.5 py-2 text-[15px]" value={gender} onChange={(e) => setGender(e.target.value)}>
-              <option>Any</option><option>Girls only</option><option>Boys only</option>
-            </select>
+        {!isOwner && (
+          <Field label="Reason for leaving">
+            <input className="field-input w-full px-2.5 py-2 text-[15px]" value={reasonLeaving} onChange={(e) => setReasonLeaving(e.target.value)} placeholder="Graduating, switching PGs, going home for the semester…" />
           </Field>
-          <Field label="Curfew"><input className="field-input w-full px-2.5 py-2 text-[15px]" value={curfew} onChange={(e) => setCurfew(e.target.value)} placeholder="e.g. 10:30 pm, or none" /></Field>
-        </Row2>
-        <Row3>
-          <Field label="Guests">
-            <select className="field-input w-full px-2.5 py-2 text-[15px]" value={guests} onChange={(e) => setGuests(e.target.value)}>
-              <option value="">Not stated</option><option value="yes">Allowed</option><option value="no">Not allowed</option>
-            </select>
-          </Field>
-          <Field label="Non-veg">
-            <select className="field-input w-full px-2.5 py-2 text-[15px]" value={nonveg} onChange={(e) => setNonveg(e.target.value)}>
-              <option value="">Not stated</option><option value="yes">Allowed</option><option value="no">Not allowed</option>
-            </select>
-          </Field>
-          <Field label="Pets">
-            <select className="field-input w-full px-2.5 py-2 text-[15px]" value={pets} onChange={(e) => setPets(e.target.value)}>
-              <option value="">Not stated</option><option value="yes">Allowed</option><option value="no">Not allowed</option>
-            </select>
-          </Field>
-        </Row3>
+        )}
+        <Field label="Preferred tenants (optional)">
+          <input className="field-input w-full px-2.5 py-2 text-[15px]" value={preferredTenants} onChange={(e) => setPreferredTenants(e.target.value)} placeholder="e.g. girls only, non-smokers, quiet hours" />
+        </Field>
       </Fieldset>
 
       {!isOwner && (
@@ -269,33 +238,18 @@ export default function PostForm({ profile, userId }: { profile: Profile; userId
       )}
 
       <Fieldset title="Contact">
-        {isOwner ? (
-          <Row2>
-            <Field label="Your name"><input className="field-input w-full px-2.5 py-2 text-[15px]" value={oName} onChange={(e) => setOName(e.target.value)} /></Field>
-            <Field label="Your phone"><input inputMode="tel" className="field-input w-full px-2.5 py-2 text-[15px]" value={oPhone} onChange={(e) => setOPhone(e.target.value)} /></Field>
-          </Row2>
-        ) : (
-          <>
-            <Row2>
-              <Field label="Owner's name"><input className="field-input w-full px-2.5 py-2 text-[15px]" value={oName} onChange={(e) => setOName(e.target.value)} placeholder="As they introduce themselves" /></Field>
-              <Field label="Owner's phone"><input inputMode="tel" className="field-input w-full px-2.5 py-2 text-[15px]" value={oPhone} onChange={(e) => setOPhone(e.target.value)} placeholder="10-digit number" /></Field>
-            </Row2>
-            <label className="flex gap-2.5 items-start text-[14.5px] mb-3">
-              <input type="checkbox" className="mt-1" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
-              <span>The owner knows I&apos;m listing this and has agreed to be contacted by students through this site.</span>
-            </label>
-            <label className="flex gap-2.5 items-start text-[14.5px] mb-3">
-              <input type="checkbox" className="mt-1" checked={noConsent} onChange={(e) => setNoConsent(e.target.checked)} />
-              <span>The owner hasn&apos;t agreed. Publish without their number and send all enquiries to me instead.</span>
-            </label>
-            <p className="text-[13px] text-soft mb-3">
-              Publishing someone&apos;s phone number without their consent is a real legal problem
-              under India&apos;s data protection law. One of these two boxes is required.
-            </p>
-            <Row2>
-              <Field label="Your own contact (shown either way)"><input inputMode="tel" className="field-input w-full px-2.5 py-2 text-[15px]" value={myPhone} onChange={(e) => setMyPhone(e.target.value)} /></Field>
-            </Row2>
-          </>
+        <Row2>
+          <Field label={isOwner ? "Your name" : "Owner's name"}>
+            <input className="field-input w-full px-2.5 py-2 text-[15px]" value={oName} onChange={(e) => setOName(e.target.value)} placeholder={isOwner ? "Full name" : "As they introduce themselves"} />
+          </Field>
+          <Field label={isOwner ? "Your phone" : "Owner's phone"}>
+            <input inputMode="tel" className="field-input w-full px-2.5 py-2 text-[15px]" value={oPhone} onChange={(e) => setOPhone(e.target.value)} placeholder="10-digit number" />
+          </Field>
+        </Row2>
+        {!isOwner && (
+          <Field label="Your own number (optional backup contact, also private otherwise)">
+            <input inputMode="tel" className="field-input w-full px-2.5 py-2 text-[15px]" value={myPhone} onChange={(e) => setMyPhone(e.target.value)} />
+          </Field>
         )}
       </Fieldset>
 

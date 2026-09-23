@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import type { Listing } from "@/lib/types";
+import { yearOfStudyLabel, type Listing } from "@/lib/types";
 
 function money(n: number) {
   return "₹" + Number(n || 0).toLocaleString("en-IN");
@@ -28,6 +28,12 @@ export default function ListingCard({ listing }: { listing: Listing }) {
     : `Free in ${d} day${d === 1 ? "" : "s"}`;
   const photo = listing.photos?.[0]?.path;
 
+  // Students are never shown by name — a year-and-college byline instead.
+  const posterLabel =
+    listing.poster_role === "owner"
+      ? "Posted by owner"
+      : `Posted by ${yearOfStudyLabel(listing.poster_admission_year)} ${listing.poster_college || "DU"} student`;
+
   return (
     <Link
       href={`/listing/${listing.id}`}
@@ -50,16 +56,10 @@ export default function ListingCard({ listing }: { listing: Listing }) {
         <div className="text-[14px] text-soft mt-1">
           {listing.type} · {listing.locality}
         </div>
-        <div className="text-[14px] text-soft">
-          {listing.campus}
-          {listing.walk_minutes ? ` · ${listing.walk_minutes} min walk` : ""}
-        </div>
         <span className="inline-block chip-marker font-semibold text-[13.5px] px-2 py-0.5 mt-3">
           {when} · {fmtDate(listing.leaving_date)}
         </span>
-        <span className={`inline-block text-[11.5px] font-semibold border-[1.5px] border-rule px-1.5 py-0.5 mt-3 ml-1.5 ${listing.poster_role === "owner" ? "bg-indigo border-indigo text-white" : ""}`}>
-          {listing.poster_role === "owner" ? "Posted by owner" : "Outgoing tenant"}
-        </span>
+        <div className="text-[12px] text-soft mt-2">{posterLabel}</div>
       </div>
     </Link>
   );

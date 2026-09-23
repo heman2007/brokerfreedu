@@ -41,7 +41,7 @@ export default async function Header() {
           {user ? (
             <Dropdown trigger={`${accountLabel} ▾`}>
               <Link href="/account" className="px-4 py-2.5 hover:bg-notice transition-colors">{accountLabel}</Link>
-              <div className="px-2 py-1.5" onClick={(e) => e.stopPropagation()}>
+              <div className="px-2 py-1.5">
                 <SignOutButton />
               </div>
             </Dropdown>

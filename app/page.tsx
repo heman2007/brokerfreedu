@@ -42,71 +42,70 @@ export default async function HomePage() {
 
   return (
     <>
-      <section className="border-b-[1.5px] border-rule min-h-[100dvh] flex items-center">
-        <div className="max-w-[1200px] mx-auto px-5 w-full grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-10 items-center">
+      <section className="border-b border-rule min-h-[100dvh] flex items-center py-16">
+        <div className="max-w-[1240px] mx-auto px-6 w-full grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-16 items-center">
           <div className="animate-fade-in">
-            <h1 className="font-serif text-[clamp(34px,7vw,72px)] leading-[1.02] tracking-tight font-semibold mb-4">
+            <p className="eyebrow mb-5">A free, DU-only housing board</p>
+            <h1 className="font-serif text-[clamp(38px,6.5vw,76px)] leading-[1.05] tracking-tight font-medium mb-7">
               The person moving out
               <br />
               knows first.
             </h1>
-            <p className="text-[17.5px] text-soft max-w-[60ch] mb-2">
+            <p className="text-[18px] text-soft max-w-[58ch] mb-10 leading-relaxed">
               Brokers around DU charge half a month&apos;s rent for one piece of information: which
               flat is about to be empty. Students already have it. Post it here before you leave,
               and the next student walks in without paying anyone.
             </p>
-            <div className="flex items-baseline gap-4 flex-wrap my-6">
-              <div className="text-[clamp(64px,13vw,132px)] leading-[0.82] font-bold tracking-tighter chip-marker px-1 transition-transform hover:scale-105">
+            <div className="flex items-baseline gap-5 flex-wrap mb-10">
+              <div className="font-serif text-[clamp(56px,10vw,104px)] leading-[0.85] font-medium" style={{ color: "var(--accent)" }}>
                 {soon.length}
               </div>
-              <span className="text-[17px] max-w-[19ch] text-soft">
+              <span className="text-[16px] max-w-[20ch] text-soft leading-snug">
                 {soon.length === 1 ? "flat or room opens" : "flats and rooms open"} up near campus
                 in the next 30 days
               </span>
             </div>
             {soon.length > 0 && (
-              <div className="flex flex-wrap gap-2 mb-2">
-                {soon.slice(0, 8).map((l, i) => (
+              <div className="flex flex-wrap gap-2 mb-10">
+                {soon.slice(0, 6).map((l, i) => (
                   <span
                     key={l.id}
-                    className="border-[1.5px] border-rule rounded-sm px-2.5 py-1 text-[13.5px] bg-notice animate-fade-in"
-                    style={{ animationDelay: `${i * 40}ms`, animationFillMode: "backwards" }}
+                    className="border border-rule px-3 py-1.5 text-[13px] text-soft animate-fade-in"
+                    style={{ animationDelay: `${i * 50}ms`, animationFillMode: "backwards" }}
                   >
                     {l.locality} · {money(l.rent)} · {fmtDate(l.leaving_date)}
                   </span>
                 ))}
               </div>
             )}
-            <div className="flex flex-wrap gap-3 mt-6">
-              <Link href="/browse" className="btn-primary inline-block px-5 py-3 font-semibold rounded-sm">
+            <div className="flex flex-wrap gap-4">
+              <Link href="/browse" className="btn-primary inline-block px-7 py-3.5 text-[13.5px] font-semibold" style={{ letterSpacing: "0.03em" }}>
                 See what&apos;s open
               </Link>
-              <Link href="/post" className="btn-ghost inline-block px-5 py-3 font-semibold rounded-sm">
+              <Link href="/post" className="btn-ghost inline-block px-7 py-3.5 text-[13.5px] font-semibold" style={{ letterSpacing: "0.03em" }}>
                 Post the flat I&apos;m leaving
               </Link>
             </div>
           </div>
 
           {/* Satyagraha — placeholder wording/photo, confirm with Deepanshu before shipping */}
-          <div className="lg:border-l lg:border-rule-thin lg:pl-9 animate-fade-in" style={{ animationDelay: "150ms", animationFillMode: "backwards" }}>
+          <div className="lg:border-l lg:border-rule lg:pl-12 animate-fade-in" style={{ animationDelay: "200ms", animationFillMode: "backwards" }}>
             <h2
-              className="font-serif text-[42px] font-semibold tracking-tight leading-[0.95] mb-1"
+              className="font-serif text-[38px] font-medium tracking-tight leading-[1] mb-2"
               style={{ color: "var(--signal)" }}
             >
               Satyagraha
             </h2>
-            <p className="font-serif italic text-[15px] text-soft mb-4">movement by</p>
-            <p className="text-[20px] font-semibold leading-tight mb-1">Deepanshu Shokeen</p>
-            <p className="text-[12px] font-semibold text-soft uppercase tracking-[0.08em]">
-              DUSU Vice President 2026
-            </p>
+            <p className="font-serif italic text-[15px] text-soft mb-6">movement by</p>
+            <p className="text-[17px] font-medium leading-tight mb-1.5">Deepanshu Shokeen</p>
+            <p className="eyebrow">DUSU Vice President 2026</p>
           </div>
         </div>
       </section>
 
-      <section className="border-b-[1.5px] border-rule py-12">
-        <div className="max-w-[1080px] mx-auto px-5">
-          <h2 className="font-serif text-[26px] font-bold tracking-tight mb-4">Recently posted</h2>
+      <section className="border-b border-rule py-24">
+        <div className="max-w-[1240px] mx-auto px-6">
+          <h2 className="font-serif text-[28px] font-medium tracking-tight mb-8">Recently posted</h2>
           {recent.length > 0 ? (
             <>
               <div className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-5">

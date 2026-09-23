@@ -79,7 +79,7 @@ export default async function ListingDetail({ params }: { params: { id: string }
             {listing.honest_note && (
               <>
                 <h3 className="font-semibold text-lg mt-7 mb-2">What the outgoing tenant wants you to know</h3>
-                <blockquote className="font-serif text-[18px] leading-relaxed border-l-4 pl-4 mb-5" style={{ borderColor: "var(--gold)" }}>
+                <blockquote className="font-serif italic text-[19px] leading-relaxed border-l pl-5 mb-5" style={{ borderColor: "var(--accent)" }}>
                   {listing.honest_note}
                 </blockquote>
               </>

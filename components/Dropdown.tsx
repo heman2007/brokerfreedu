@@ -33,13 +33,15 @@ export default function Dropdown({
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen((o) => !o)}
-        className="px-3 py-2 rounded-sm border border-transparent hover:border-rule transition-colors text-[14.5px] font-medium"
+        className="eyebrow py-2 border-b border-transparent hover:border-ink transition-colors"
+        style={{ letterSpacing: "0.08em" }}
       >
         {trigger}
       </button>
       {open && (
         <div
-          className={`dropdown-panel absolute ${align === "right" ? "right-0" : "left-0"} top-[calc(100%+6px)] bg-paper border-[1.5px] border-rule rounded-sm min-w-[180px] flex flex-col py-1 shadow-lg z-50`}
+          className={`dropdown-panel absolute ${align === "right" ? "right-0" : "left-0"} top-[calc(100%+10px)] bg-notice border border-rule min-w-[190px] flex flex-col py-2 z-50`}
+          style={{ boxShadow: "0 8px 24px -8px rgba(20,18,14,0.15)" }}
           onClick={() => setOpen(false)}
         >
           {children}

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import AuthFlows from "@/components/AuthFlows";
 import CompleteProfile from "@/components/CompleteProfile";
+import ProfileEditForm from "@/components/ProfileEditForm";
 import ListingCard from "@/components/ListingCard";
 import SignOutButton from "@/components/SignOutButton";
 import type { Listing } from "@/lib/types";
@@ -77,6 +78,10 @@ export default async function AccountPage({
             </p>
           </div>
           <SignOutButton />
+        </div>
+
+        <div className="mt-6">
+          <ProfileEditForm profile={profile} />
         </div>
 
         <div className="flex gap-3 mt-6">

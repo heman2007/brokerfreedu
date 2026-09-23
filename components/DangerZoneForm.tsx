@@ -1,9 +1,15 @@
 "use client";
 
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { LOCALITIES } from "@/lib/types";
+
+const MapPicker = dynamic(() => import("@/components/MapPicker"), {
+  ssr: false,
+  loading: () => <div className="skeleton-block h-[260px]" />,
+});
 
 type MediaItem = { file: File; kind: "photo" | "video"; previewUrl: string };
 
@@ -13,7 +19,6 @@ export default function DangerZoneForm() {
   const [address, setAddress] = useState("");
   const [lat, setLat] = useState("");
   const [lng, setLng] = useState("");
-  const [locating, setLocating] = useState(false);
   const [description, setDescription] = useState("");
   const [ownerPhone, setOwnerPhone] = useState("");
   const [rent, setRent] = useState("");
@@ -40,20 +45,9 @@ export default function DangerZoneForm() {
     });
   }
 
-  function usePinpoint() {
-    if (!navigator.geolocation) return setErr("Location isn't available on this browser.");
-    setLocating(true);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setLat(pos.coords.latitude.toFixed(6));
-        setLng(pos.coords.longitude.toFixed(6));
-        setLocating(false);
-      },
-      () => {
-        setLocating(false);
-        setErr("Couldn't get your location.");
-      }
-    );
+  function pinLocation(newLat: number, newLng: number) {
+    setLat(newLat.toFixed(6));
+    setLng(newLng.toFixed(6));
   }
 
   async function submit() {
@@ -135,13 +129,8 @@ export default function DangerZoneForm() {
         <input className="field-input w-full px-2.5 py-2 text-[15px]" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Building and street" />
       </div>
       <div className="mb-3.5">
-        <label className="block text-[13.5px] font-medium mb-1">Pinpoint (optional, admin-only)</label>
-        <div className="flex gap-2 items-center flex-wrap">
-          <button type="button" onClick={usePinpoint} disabled={locating} className="btn-ghost px-3 py-2 text-sm font-semibold rounded-sm">
-            {locating ? "Getting location…" : "Use my current location"}
-          </button>
-          {lat && lng && <span className="text-[13.5px] text-soft">Pinned: {lat}, {lng}</span>}
-        </div>
+        <label className="block text-[13.5px] font-medium mb-1">Pinpoint (admin-only)</label>
+        <MapPicker lat={lat ? Number(lat) : null} lng={lng ? Number(lng) : null} onChange={pinLocation} />
       </div>
       <div className="mb-3.5">
         <label className="block text-[13.5px] font-medium mb-1">Photos / videos</label>

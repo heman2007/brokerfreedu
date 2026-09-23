@@ -47,7 +47,7 @@ export default async function ListingDetail({ params }: { params: { id: string }
         </Link>
         <div className="grid grid-cols-1 md:grid-cols-[1.25fr_.9fr] gap-9 items-start">
           <div>
-            <h1 className="text-[28px] font-bold tracking-tight mb-1">
+            <h1 className="font-serif text-[28px] font-semibold tracking-tight mb-1">
               {listing.type} in {listing.locality}
             </h1>
             <p className="text-soft text-[15px] mb-1">{listing.address}</p>
@@ -79,7 +79,7 @@ export default async function ListingDetail({ params }: { params: { id: string }
             {listing.honest_note && (
               <>
                 <h3 className="font-semibold text-lg mt-7 mb-2">What the outgoing tenant wants you to know</h3>
-                <blockquote className="font-serif text-[18px] leading-relaxed border-l-4 pl-4 mb-5" style={{ borderColor: "var(--marker)" }}>
+                <blockquote className="font-serif text-[18px] leading-relaxed border-l-4 pl-4 mb-5" style={{ borderColor: "var(--gold)" }}>
                   {listing.honest_note}
                 </blockquote>
               </>

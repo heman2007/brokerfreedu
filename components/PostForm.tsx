@@ -1,9 +1,15 @@
 "use client";
 
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { LOCALITIES, LISTING_TYPES, type Profile } from "@/lib/types";
+
+const MapPicker = dynamic(() => import("@/components/MapPicker"), {
+  ssr: false,
+  loading: () => <div className="skeleton-block h-[260px]" />,
+});
 
 type MediaItem = { file: File; kind: "photo" | "video"; previewUrl: string };
 const MAX_VIDEO_MB = 40;
@@ -19,7 +25,6 @@ export default function PostForm({ profile, userId }: { profile: Profile; userId
   const [address, setAddress] = useState("");
   const [lat, setLat] = useState("");
   const [lng, setLng] = useState("");
-  const [locating, setLocating] = useState(false);
   const [rent, setRent] = useState("");
   const [deposit, setDeposit] = useState("");
   const [maint, setMaint] = useState("");
@@ -52,23 +57,9 @@ export default function PostForm({ profile, userId }: { profile: Profile; userId
     });
   }
 
-  function usePinpoint() {
-    if (!navigator.geolocation) {
-      setErr("Location isn't available on this browser — enter coordinates manually if you have them.");
-      return;
-    }
-    setLocating(true);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setLat(pos.coords.latitude.toFixed(6));
-        setLng(pos.coords.longitude.toFixed(6));
-        setLocating(false);
-      },
-      () => {
-        setLocating(false);
-        setErr("Couldn't get your location — check location permission, or enter coordinates manually.");
-      }
-    );
+  function pinLocation(newLat: number, newLng: number) {
+    setLat(newLat.toFixed(6));
+    setLng(newLng.toFixed(6));
   }
 
   async function submit() {
@@ -137,7 +128,7 @@ export default function PostForm({ profile, userId }: { profile: Profile; userId
 
   return (
     <div className="max-w-[660px]">
-      <h2 className="text-[26px] font-bold tracking-tight mb-2">
+      <h2 className="font-serif text-[26px] font-bold tracking-tight mb-2">
         {isOwner ? "Post a vacancy" : "Post the flat you're leaving"}
       </h2>
       <p className="text-[17.5px] text-soft max-w-[60ch] mb-7">
@@ -190,16 +181,8 @@ export default function PostForm({ profile, userId }: { profile: Profile; userId
         <Field label="Address">
           <input className="field-input w-full px-2.5 py-2 text-[15px]" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="House/flat number, street" />
         </Field>
-        <Field label="Pinpoint location (optional but helpful)">
-          <div className="flex gap-2 items-center flex-wrap">
-            <button type="button" onClick={usePinpoint} disabled={locating} className="btn-ghost px-3 py-2 text-sm font-semibold rounded-sm">
-              {locating ? "Getting location…" : "Use my current location"}
-            </button>
-            {lat && lng && <span className="text-[13.5px] text-soft">Pinned: {lat}, {lng}</span>}
-          </div>
-          <p className="text-[13px] text-soft mt-1">
-            Only works accurately if you&apos;re standing at the flat when you tap it — otherwise leave it blank.
-          </p>
+        <Field label="Pinpoint location">
+          <MapPicker lat={lat ? Number(lat) : null} lng={lng ? Number(lng) : null} onChange={pinLocation} />
         </Field>
       </Fieldset>
 

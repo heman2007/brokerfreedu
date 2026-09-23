@@ -35,7 +35,7 @@ export default async function BrowsePage({
   return (
     <section className="py-12">
       <div className="max-w-[1080px] mx-auto px-5">
-        <h2 className="text-[26px] font-bold tracking-tight mb-2">
+        <h2 className="font-serif text-[26px] font-bold tracking-tight mb-2">
           {listings.length} place{listings.length === 1 ? "" : "s"} open
         </h2>
         <p className="text-[17.5px] text-soft max-w-[60ch] mb-6">

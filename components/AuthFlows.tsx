@@ -10,7 +10,7 @@ export default function AuthFlows() {
 
   return (
     <div>
-      <h2 className="text-[26px] font-bold tracking-tight mb-2">Two kinds of account</h2>
+      <h2 className="font-serif text-[26px] font-bold tracking-tight mb-2">Two kinds of account</h2>
       <p className="text-[17.5px] text-soft max-w-[60ch] mb-7">
         Listings, contact details, and everything else here need a signed-in account — that's
         what keeps this a DU-only board. You only need to pick one below.
@@ -154,11 +154,24 @@ function StudentForm() {
     return (
       <div className="notice-card rounded-sm p-5 max-w-[500px] animate-fade-in">
         <h3 className="font-semibold text-lg mb-2">Confirm your email</h3>
-        <p className="text-soft text-[15px]">
+        <p className="text-soft text-[15px] mb-4">
           We&apos;ve sent a one-time confirmation link to <strong className="text-ink">{email}</strong>.
           Click it once, then come back and log in with the password you just set — no more
-          links after this.
+          links after this. Check spam if it doesn't show up in a minute or two.
         </p>
+        <button
+          onClick={async () => {
+            setBusy(true);
+            const { error } = await supabase.auth.resend({ type: "signup", email: email.trim() });
+            setBusy(false);
+            setErr(error ? error.message : "Sent again — check your inbox and spam folder.");
+          }}
+          disabled={busy}
+          className="btn-ghost px-4 py-2 text-sm font-semibold rounded-sm"
+        >
+          {busy ? "Sending…" : "Resend confirmation email"}
+        </button>
+        {err && <p className="text-[14px] mt-2" style={{ color: "var(--signal)" }}>{err}</p>}
       </div>
     );
   }

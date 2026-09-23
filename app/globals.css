@@ -2,40 +2,58 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ============================================================
+   Design tokens — quiet, editorial, real-estate-professional.
+   Deep ink-teal for trust/action, muted brass for emphasis,
+   soft muted maroon for risk/safety. No poster colors, no
+   sticker shadows.
+============================================================ */
 :root {
-  --paper: #e5e3dc;
-  --notice: #fcfbf7;
-  --ink: #15161b;
-  --soft: #5a5c64;
-  --indigo: #2a34c4;
-  --marker: #f4e430;
-  --signal: #b32217;
-  --rule: #15161b;
-  --rule-thin: #c3c0b7;
+  --paper: #f6f4ef;
+  --notice: #ffffff;
+  --ink: #1b1e23;
+  --soft: #666a72;
+  --accent: #1f4d43;
+  --accent-soft: #e8efec;
+  --gold: #a6822f;
+  --gold-soft: #f3ead4;
+  --signal: #8a3324;
+  --signal-soft: #f4e8e4;
+  --rule: #ded9cf;
+  --rule-thin: #eae6dc;
+  --shadow-color: 20, 20, 20;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --paper: #131418;
-    --notice: #1c1e24;
-    --ink: #ecebe6;
-    --soft: #9a9ca4;
-    --indigo: #8e97ff;
-    --marker: #e2d23a;
-    --signal: #ff7264;
-    --rule: #3a3d46;
-    --rule-thin: #2b2e36;
+    --paper: #14161a;
+    --notice: #1d2024;
+    --ink: #ece9e2;
+    --soft: #9a9da4;
+    --accent: #6fa393;
+    --accent-soft: #223330;
+    --gold: #cba85c;
+    --gold-soft: #33291a;
+    --signal: #c98675;
+    --signal-soft: #382320;
+    --rule: #33363c;
+    --rule-thin: #262930;
+    --shadow-color: 0, 0, 0;
   }
 }
 :root[data-theme="dark"] {
-  --paper: #131418;
-  --notice: #1c1e24;
-  --ink: #ecebe6;
-  --soft: #9a9ca4;
-  --indigo: #8e97ff;
-  --marker: #e2d23a;
-  --signal: #ff7264;
-  --rule: #3a3d46;
-  --rule-thin: #2b2e36;
+  --paper: #14161a;
+  --notice: #1d2024;
+  --ink: #ece9e2;
+  --soft: #9a9da4;
+  --accent: #6fa393;
+  --accent-soft: #223330;
+  --gold: #cba85c;
+  --gold-soft: #33291a;
+  --signal: #c98675;
+  --signal-soft: #382320;
+  --rule: #33363c;
+  --rule-thin: #262930;
+  --shadow-color: 0, 0, 0;
 }
 
 * {
@@ -48,69 +66,91 @@ body {
   background: var(--paper);
   color: var(--ink);
   font-feature-settings: "tnum" 1;
+  -webkit-font-smoothing: antialiased;
 }
 img {
   max-width: 100%;
   display: block;
 }
 a {
-  color: var(--indigo);
+  color: var(--accent);
 }
 
+/* ---------- surfaces ---------- */
 .notice-card {
   background: var(--notice);
-  border: 1.5px solid var(--rule);
-  box-shadow: 5px 5px 0 var(--rule-thin);
-  transition: box-shadow 150ms ease;
+  border: 1px solid var(--rule);
+  border-radius: 14px;
+  box-shadow: 0 1px 2px rgba(var(--shadow-color), 0.04), 0 10px 28px -14px rgba(var(--shadow-color), 0.18);
+  transition: box-shadow 200ms ease, transform 200ms ease;
 }
 .notice-card:hover {
-  box-shadow: 5px 5px 0 var(--indigo);
+  box-shadow: 0 2px 4px rgba(var(--shadow-color), 0.06), 0 18px 36px -14px rgba(var(--shadow-color), 0.22);
+  transform: translateY(-2px);
 }
+
+/* ---------- buttons ---------- */
 .btn-primary {
-  background: var(--ink);
-  color: var(--paper);
-  border: 1.5px solid var(--ink);
-  box-shadow: 4px 4px 0 var(--ink);
-  transition: transform 120ms ease, box-shadow 120ms ease, opacity 120ms ease;
+  background: var(--accent);
+  color: #fdfcfa;
+  border: 1px solid var(--accent);
+  border-radius: 9px;
+  box-shadow: 0 1px 2px rgba(var(--shadow-color), 0.08);
+  transition: transform 150ms ease, box-shadow 150ms ease, filter 150ms ease;
+}
+.btn-primary:hover {
+  filter: brightness(1.08);
+  box-shadow: 0 6px 16px -6px rgba(31, 77, 67, 0.45);
+  transform: translateY(-1px);
 }
 .btn-primary:active {
-  transform: translate(2px, 2px);
-  box-shadow: 2px 2px 0 var(--ink);
+  transform: translateY(0);
 }
 .btn-ghost {
   background: transparent;
   color: var(--ink);
-  border: 1.5px solid var(--ink);
-  box-shadow: 4px 4px 0 var(--rule-thin);
-  transition: transform 120ms ease, box-shadow 120ms ease, background-color 120ms ease;
+  border: 1px solid var(--rule);
+  border-radius: 9px;
+  transition: transform 150ms ease, border-color 150ms ease, background-color 150ms ease;
 }
-.btn-ghost:active {
-  transform: translate(2px, 2px);
-  box-shadow: 2px 2px 0 var(--rule-thin);
+.btn-ghost:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  transform: translateY(-1px);
 }
 .btn-red {
   background: var(--signal);
-  color: #fff;
-  border: 1.5px solid var(--signal);
-  box-shadow: 4px 4px 0 var(--ink);
-  transition: transform 120ms ease, box-shadow 120ms ease;
+  color: #fdfcfa;
+  border: 1px solid var(--signal);
+  border-radius: 9px;
+  transition: transform 150ms ease, filter 150ms ease;
 }
-.btn-red:active {
-  transform: translate(2px, 2px);
-  box-shadow: 2px 2px 0 var(--ink);
+.btn-red:hover {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
 }
+
+/* ---------- forms ---------- */
 .field-input {
   background: var(--notice);
-  border: 1.5px solid var(--rule);
-  border-radius: 2px;
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
 }
 .field-input:focus {
-  outline: 3px solid var(--indigo);
-  outline-offset: 1px;
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
 }
+
+/* ---------- accents ---------- */
+/* Restrained gold badge — used sparingly for the one thing that matters
+   most (date of leaving), never as a big flat color block. */
 .chip-marker {
-  background: var(--marker);
-  color: #15161b;
+  background: var(--gold-soft);
+  color: var(--gold);
+  border: 1px solid var(--gold);
+  border-radius: 999px;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -122,26 +162,36 @@ a {
 
 @keyframes skeleton-pulse {
   0%, 100% { opacity: 0.45; }
-  50% { opacity: 0.9; }
+  50% { opacity: 0.85; }
 }
 .skeleton-block {
   background: var(--rule-thin);
   animation: skeleton-pulse 1.4s ease-in-out infinite;
-  border-radius: 2px;
+  border-radius: 8px;
 }
 
 @keyframes fade-in {
-  from { opacity: 0; transform: translateY(4px); }
+  from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: translateY(0); }
 }
 .animate-fade-in {
-  animation: fade-in 0.25s ease-out;
+  animation: fade-in 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 details[open] > .dropdown-panel {
   animation: fade-in 150ms ease-out;
 }
 summary {
-  transition: background-color 120ms ease;
+  transition: background-color 150ms ease;
 }
 summary::-webkit-details-marker { display: none; }
+
+/* Leaflet map picker container */
+.map-picker {
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--rule);
+}
+.leaflet-container {
+  font-family: inherit;
+}

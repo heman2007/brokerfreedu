@@ -45,7 +45,7 @@ export default async function HomePage() {
       <section className="border-b-[1.5px] border-rule min-h-[100dvh] flex items-center">
         <div className="max-w-[1200px] mx-auto px-5 w-full grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-10 items-center">
           <div className="animate-fade-in">
-            <h1 className="text-[clamp(34px,7vw,72px)] leading-[1.02] tracking-tight font-bold mb-4">
+            <h1 className="font-serif text-[clamp(34px,7vw,72px)] leading-[1.02] tracking-tight font-semibold mb-4">
               The person moving out
               <br />
               knows first.
@@ -88,14 +88,14 @@ export default async function HomePage() {
           </div>
 
           {/* Satyagraha — placeholder wording/photo, confirm with Deepanshu before shipping */}
-          <div className="lg:border-l-[1.5px] lg:border-rule-thin lg:pl-9 animate-fade-in" style={{ animationDelay: "150ms", animationFillMode: "backwards" }}>
-            <p className="font-serif italic text-[15px] text-soft mb-1">movement by</p>
+          <div className="lg:border-l lg:border-rule-thin lg:pl-9 animate-fade-in" style={{ animationDelay: "150ms", animationFillMode: "backwards" }}>
             <h2
-              className="text-[42px] font-bold tracking-tight leading-[0.95] mb-3"
+              className="font-serif text-[42px] font-semibold tracking-tight leading-[0.95] mb-1"
               style={{ color: "var(--signal)" }}
             >
               Satyagraha
             </h2>
+            <p className="font-serif italic text-[15px] text-soft mb-4">movement by</p>
             <p className="text-[20px] font-semibold leading-tight mb-1">Deepanshu Shokeen</p>
             <p className="text-[12px] font-semibold text-soft uppercase tracking-[0.08em]">
               DUSU Vice President 2026
@@ -106,7 +106,7 @@ export default async function HomePage() {
 
       <section className="border-b-[1.5px] border-rule py-12">
         <div className="max-w-[1080px] mx-auto px-5">
-          <h2 className="text-[26px] font-bold tracking-tight mb-4">Recently posted</h2>
+          <h2 className="font-serif text-[26px] font-bold tracking-tight mb-4">Recently posted</h2>
           {recent.length > 0 ? (
             <>
               <div className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-5">
@@ -137,7 +137,7 @@ export default async function HomePage() {
 
       <section className="border-b-[1.5px] border-rule py-12">
         <div className="max-w-[1080px] mx-auto px-5">
-          <h2 className="text-[26px] font-bold tracking-tight mb-6">How it works</h2>
+          <h2 className="font-serif text-[26px] font-bold tracking-tight mb-6">How it works</h2>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
             <div className="pt-3.5" style={{ borderTop: "3px solid var(--ink)" }}>
               <span className="text-[13px] font-bold text-indigo block mb-1.5">Step 1</span>
@@ -184,7 +184,7 @@ export default async function HomePage() {
 
       <section className="py-12" style={{ borderTop: "5px solid var(--signal)" }}>
         <div className="max-w-[1080px] mx-auto px-5">
-          <h2 className="text-[26px] font-bold tracking-tight mb-4">
+          <h2 className="font-serif text-[26px] font-bold tracking-tight mb-4">
             Buildings don&apos;t get a fitness certificate. Vehicles do.
           </h2>
           <p className="text-[17.5px] text-soft max-w-[60ch] mb-6">

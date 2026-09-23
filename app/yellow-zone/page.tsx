@@ -32,7 +32,7 @@ export default async function YellowZonePage() {
   return (
     <section className="py-12" style={{ borderTop: "5px solid #E8B800" }}>
       <div className="max-w-[1080px] mx-auto px-5">
-        <h2 className="text-[26px] font-bold tracking-tight mb-2">Yellow Zone</h2>
+        <h2 className="font-serif text-[26px] font-bold tracking-tight mb-2">Yellow Zone</h2>
         <p className="text-[17.5px] text-soft max-w-[70ch] mb-6">
           Ask us to audit your PG or flat for safety, before something goes wrong rather than
           after. Address and owner details stay admin-only, same as everywhere else on this site.

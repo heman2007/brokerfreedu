@@ -35,7 +35,7 @@ export default async function DangerZonePage() {
     <>
       <section className="py-12" style={{ borderTop: "5px solid var(--signal)" }}>
         <div className="max-w-[1080px] mx-auto px-5">
-          <h2 className="text-[26px] font-bold tracking-tight mb-2" style={{ color: "var(--signal)" }}>
+          <h2 className="font-serif text-[26px] font-bold tracking-tight mb-2" style={{ color: "var(--signal)" }}>
             Danger Zone
           </h2>
           <p className="text-[17.5px] text-soft max-w-[70ch] mb-8">

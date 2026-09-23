@@ -30,7 +30,7 @@ export default async function PetitionPage() {
     <>
       <section className="py-12" style={{ borderTop: "5px solid var(--signal)" }}>
         <div className="max-w-[1080px] mx-auto px-5">
-          <h2 className="text-[26px] font-bold tracking-tight mb-6">
+          <h2 className="font-serif text-[26px] font-bold tracking-tight mb-6">
             Mandatory safety audits for buildings used as student housing
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-[1fr_340px] gap-9 items-start">
@@ -108,7 +108,7 @@ export default async function PetitionPage() {
 
       <section className="py-12">
         <div className="max-w-[1080px] mx-auto px-5">
-          <h2 className="text-[26px] font-bold tracking-tight mb-4">Rent Control</h2>
+          <h2 className="font-serif text-[26px] font-bold tracking-tight mb-4">Rent Control</h2>
           <p className="text-[17.5px] text-soft max-w-[70ch] mb-7">
             The other half of this problem: what students actually pay near campus, for what they
             actually get.

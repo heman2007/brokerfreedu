@@ -15,7 +15,7 @@ export default async function PostPage() {
     return (
       <section className="py-12">
         <div className="max-w-[1080px] mx-auto px-5">
-          <h2 className="text-[26px] font-bold tracking-tight mb-2">Tell us who you are first</h2>
+          <h2 className="font-serif text-[26px] font-bold tracking-tight mb-2">Tell us who you are first</h2>
           <p className="text-[17.5px] text-soft max-w-[60ch] mb-6">
             Listings are posted by students moving out or by owners directly. Pick which one you
             are — it takes a minute and it&apos;s the only thing keeping brokers off this board.

@@ -20,7 +20,7 @@ export default async function AdminPage() {
     return (
       <section className="py-12">
         <div className="max-w-[1080px] mx-auto px-5">
-          <h2 className="text-[26px] font-bold tracking-tight mb-2">Admins only</h2>
+          <h2 className="font-serif text-[26px] font-bold tracking-tight mb-2">Admins only</h2>
           <p className="text-soft">
             This page is for accounts with the <code>admin</code> role. Set one via SQL Editor:{" "}
             <code>update profiles set role = &apos;admin&apos; where email = &apos;you@example.com&apos;;</code>

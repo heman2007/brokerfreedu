@@ -69,7 +69,7 @@ export default async function AccountPage({
       <div className="max-w-[1080px] mx-auto px-5">
         <div className="flex items-start justify-between flex-wrap gap-3">
           <div>
-            <h2 className="text-[26px] font-bold tracking-tight mb-1">{profile.name}</h2>
+            <h2 className="font-serif text-[26px] font-bold tracking-tight mb-1">{profile.name}</h2>
             <p className="text-[16px] text-soft">
               {profile.role === "owner" ? "Owner account" : "Student account"}
               {profile.college ? ` · ${profile.college}` : ""}
@@ -85,7 +85,7 @@ export default async function AccountPage({
           </Link>
         </div>
 
-        <h2 className="text-[26px] font-bold tracking-tight mt-11 mb-4">My listings</h2>
+        <h2 className="font-serif text-[26px] font-bold tracking-tight mt-11 mb-4">My listings</h2>
         {mine.length > 0 ? (
           <>
             <div className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-5">

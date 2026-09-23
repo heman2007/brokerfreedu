@@ -10,14 +10,14 @@ const config: Config = {
         notice: "var(--notice)",
         ink: "var(--ink)",
         soft: "var(--soft)",
-        indigo: "var(--indigo)",
-        marker: "var(--marker)",
+        indigo: "var(--accent)",
+        marker: "var(--gold)",
         signal: "var(--signal)",
         rule: "var(--rule)",
         "rule-thin": "var(--rule-thin)",
       },
       fontFamily: {
-        sans: ["Archivo", "Helvetica Neue", "Arial", "sans-serif"],
+        sans: ["Inter", "Helvetica Neue", "Arial", "sans-serif"],
         serif: ["Newsreader", "Georgia", "Times New Roman", "serif"],
       },
       boxShadow: {

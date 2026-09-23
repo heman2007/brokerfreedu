@@ -35,6 +35,7 @@ export default function AuthFlows() {
 }
 
 function StudentForm() {
+  const [mode, setMode] = useState<"login" | "signup">("login");
   const [name, setName] = useState("");
   const [college, setCollege] = useState("");
   const [course, setCourse] = useState("");
@@ -50,8 +51,12 @@ function StudentForm() {
 
   async function submit() {
     setErr("");
-    if (!name.trim() || !email.trim()) {
-      setErr("Name and email are both needed.");
+    if (!email.trim()) {
+      setErr("Enter your email.");
+      return;
+    }
+    if (mode === "signup" && !name.trim()) {
+      setErr("Name is needed to create an account.");
       return;
     }
     if (!/^\S+@\S+\.\S+$/.test(email)) {
@@ -59,26 +64,29 @@ function StudentForm() {
       return;
     }
     if (!isDuEmail(email.trim())) {
-      setErr("Sign-up is only open to DU email addresses (ending in du.ac.in).");
+      setErr("Only DU email addresses (ending in du.ac.in) can sign in here.");
       return;
     }
     setBusy(true);
 
-    // Save what they typed BEFORE sending the email — the magic-link
-    // round trip can't reliably carry it via URL query params.
-    const { error: pendingErr } = await supabase.from("pending_signups").upsert({
-      email: email.trim(),
-      name: name.trim(),
-      college: college.trim(),
-      course: course.trim(),
-      admission_year: admissionYear ? Number(admissionYear) : null,
-      area: area.trim(),
-      phone: phone.trim(),
-    });
-    if (pendingErr) {
-      setBusy(false);
-      setErr("Couldn't save your details. Try again.");
-      return;
+    // Only write pending_signups on Sign up — a returning user just
+    // logging in shouldn't have their existing profile details
+    // overwritten (or be forced to retype them).
+    if (mode === "signup") {
+      const { error: pendingErr } = await supabase.from("pending_signups").upsert({
+        email: email.trim(),
+        name: name.trim(),
+        college: college.trim(),
+        course: course.trim(),
+        admission_year: admissionYear ? Number(admissionYear) : null,
+        area: area.trim(),
+        phone: phone.trim(),
+      });
+      if (pendingErr) {
+        setBusy(false);
+        setErr(`Couldn't save your details: ${pendingErr.message}`);
+        return;
+      }
     }
 
     const { error } = await supabase.auth.signInWithOtp({
@@ -104,11 +112,11 @@ function StudentForm() {
 
   if (sent) {
     return (
-      <div className="notice-card rounded-sm p-5 max-w-[500px]">
+      <div className="notice-card rounded-sm p-5 max-w-[500px] animate-fade-in">
         <h3 className="font-semibold text-lg mb-2">Check your inbox</h3>
         <p className="text-soft text-[15px]">
           We&apos;ve sent a sign-in link to <strong className="text-ink">{email}</strong>. Open it
-          on this device to finish setting up your account.
+          on this device to finish.
         </p>
       </div>
     );
@@ -119,7 +127,7 @@ function StudentForm() {
       <button
         onClick={withGoogle}
         disabled={googleBusy}
-        className="btn-ghost w-full px-5 py-2.5 font-semibold rounded-sm mb-3 flex items-center justify-center gap-2"
+        className="btn-ghost w-full px-5 py-2.5 font-semibold rounded-sm mb-3 flex items-center justify-center gap-2 transition-transform active:scale-[0.98]"
       >
         {googleBusy ? "Redirecting…" : "Continue with Google (DU account)"}
       </button>
@@ -133,32 +141,59 @@ function StudentForm() {
         <div className="h-px flex-1 bg-rule-thin" />
       </div>
 
-      <div className="notice-card rounded-sm p-5">
-        <h3 className="font-semibold text-lg mb-4">Student account</h3>
-        <Field label="Your name">
-          <input className="field-input w-full px-2.5 py-2 text-[15px]" value={name} onChange={(e) => setName(e.target.value)} placeholder="Full name" />
-        </Field>
-        <Field label="College or department">
-          <input className="field-input w-full px-2.5 py-2 text-[15px]" value={college} onChange={(e) => setCollege(e.target.value)} placeholder="e.g. Hindu College" />
-        </Field>
-        <Field label="Course">
-          <input className="field-input w-full px-2.5 py-2 text-[15px]" value={course} onChange={(e) => setCourse(e.target.value)} placeholder="e.g. BA Hons Economics" />
-        </Field>
-        <div className="grid grid-cols-2 gap-3.5">
-          <Field label="Admission year">
-            <input type="number" inputMode="numeric" className="field-input w-full px-2.5 py-2 text-[15px]" value={admissionYear} onChange={(e) => setAdmissionYear(e.target.value)} placeholder="2023" />
-          </Field>
-          <Field label="Area you live in">
-            <input className="field-input w-full px-2.5 py-2 text-[15px]" value={area} onChange={(e) => setArea(e.target.value)} placeholder="e.g. Kamla Nagar" />
-          </Field>
-        </div>
-        <Field label="Email" hint="Must end in du.ac.in — this is what keeps the board DU-only.">
-          <input type="email" className="field-input w-full px-2.5 py-2 text-[15px]" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@ramjas.du.ac.in" />
-        </Field>
-        <Field label="Phone" hint="Kept private — never shown on the website or shared publicly. Only used to reach you about your own listings.">
-          <input inputMode="tel" className="field-input w-full px-2.5 py-2 text-[15px]" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="10-digit number" />
-        </Field>
-        <button onClick={submit} disabled={busy} className="btn-primary px-5 py-2.5 font-semibold rounded-sm">
+      <div className="flex gap-2 mb-4">
+        <button
+          onClick={() => { setMode("login"); setErr(""); }}
+          className={`flex-1 py-2 text-[14px] font-semibold rounded-sm border-[1.5px] transition-colors ${mode === "login" ? "bg-ink text-paper border-ink" : "border-rule-thin text-soft"}`}
+        >
+          Log in
+        </button>
+        <button
+          onClick={() => { setMode("signup"); setErr(""); }}
+          className={`flex-1 py-2 text-[14px] font-semibold rounded-sm border-[1.5px] transition-colors ${mode === "signup" ? "bg-ink text-paper border-ink" : "border-rule-thin text-soft"}`}
+        >
+          Sign up
+        </button>
+      </div>
+
+      <div className="notice-card rounded-sm p-5 transition-all">
+        {mode === "login" ? (
+          <>
+            <h3 className="font-semibold text-lg mb-1">Log in</h3>
+            <p className="text-[14px] text-soft mb-4">Already have an account — just your email, nothing to retype.</p>
+            <Field label="Email">
+              <input type="email" className="field-input w-full px-2.5 py-2 text-[15px]" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@ramjas.du.ac.in" />
+            </Field>
+          </>
+        ) : (
+          <>
+            <h3 className="font-semibold text-lg mb-4">Create a student account</h3>
+            <Field label="Your name">
+              <input className="field-input w-full px-2.5 py-2 text-[15px]" value={name} onChange={(e) => setName(e.target.value)} placeholder="Full name" />
+            </Field>
+            <Field label="College or department">
+              <input className="field-input w-full px-2.5 py-2 text-[15px]" value={college} onChange={(e) => setCollege(e.target.value)} placeholder="e.g. Hindu College" />
+            </Field>
+            <Field label="Course">
+              <input className="field-input w-full px-2.5 py-2 text-[15px]" value={course} onChange={(e) => setCourse(e.target.value)} placeholder="e.g. BA Hons Economics" />
+            </Field>
+            <div className="grid grid-cols-2 gap-3.5">
+              <Field label="Admission year">
+                <input type="number" inputMode="numeric" className="field-input w-full px-2.5 py-2 text-[15px]" value={admissionYear} onChange={(e) => setAdmissionYear(e.target.value)} placeholder="2023" />
+              </Field>
+              <Field label="Area you live in">
+                <input className="field-input w-full px-2.5 py-2 text-[15px]" value={area} onChange={(e) => setArea(e.target.value)} placeholder="e.g. Kamla Nagar" />
+              </Field>
+            </div>
+            <Field label="Email" hint="Must end in du.ac.in — this is what keeps the board DU-only.">
+              <input type="email" className="field-input w-full px-2.5 py-2 text-[15px]" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@ramjas.du.ac.in" />
+            </Field>
+            <Field label="Phone" hint="Kept private — never shown on the website or shared publicly. Only used to reach you about your own listings.">
+              <input inputMode="tel" className="field-input w-full px-2.5 py-2 text-[15px]" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="10-digit number" />
+            </Field>
+          </>
+        )}
+        <button onClick={submit} disabled={busy} className="btn-primary px-5 py-2.5 font-semibold rounded-sm mt-1 transition-transform active:scale-[0.98]">
           {busy ? "Sending link…" : "Send sign-in link"}
         </button>
         {err && <p className="text-[14px] mt-2" style={{ color: "var(--signal)" }}>{err}</p>}

@@ -18,32 +18,42 @@ export default async function Header() {
     accountLabel = profile?.role === "owner" ? "My properties" : "My account";
   }
 
+  const navLink = "px-3 py-2 rounded-sm border border-transparent hover:border-rule transition-colors";
+
   return (
     <header className="sticky top-0 z-40 bg-paper border-b-[1.5px] border-rule">
       <div className="max-w-[1080px] mx-auto px-5 h-[62px] flex items-center gap-4">
         <Link href="/" className="font-bold text-[19px] tracking-tight whitespace-nowrap">
           broker<span className="chip-marker px-[3px]">free</span>DU
         </Link>
+
         <nav className="ml-auto hidden md:flex items-center gap-1 text-[14.5px] font-medium">
-          <Link href="/browse" className="px-3 py-2 rounded-sm hover:border hover:border-rule border border-transparent">
-            Find a place
-          </Link>
-          <Link href="/post" className="px-3 py-2 rounded-sm hover:border hover:border-rule border border-transparent">
-            Post a flat
-          </Link>
-          <Link href="/petition" className="px-3 py-2 rounded-sm hover:border hover:border-rule border border-transparent">
-            Petition
-          </Link>
-          <Link href="/danger-zone" className="px-3 py-2 rounded-sm hover:border hover:border-rule border border-transparent">
-            Danger Zone
-          </Link>
-          <Link href="/yellow-zone" className="px-3 py-2 rounded-sm hover:border hover:border-rule border border-transparent">
-            Yellow Zone
-          </Link>
-          <Link href="/account" className="px-3 py-2 rounded-sm border border-rule">
-            {accountLabel}
-          </Link>
-          {user && <SignOutButton />}
+          <Link href="/browse" className={navLink}>Find a place</Link>
+          <Link href="/post" className={navLink}>Post a flat</Link>
+
+          {/* Grouped so the bar doesn't turn into six competing links */}
+          <details className="relative">
+            <summary className={`list-none cursor-pointer ${navLink}`}>Safety ▾</summary>
+            <div className="dropdown-panel absolute right-0 top-[calc(100%+6px)] bg-paper border-[1.5px] border-rule rounded-sm min-w-[180px] flex flex-col py-1 shadow-lg">
+              <Link href="/petition" className="px-4 py-2.5 hover:bg-notice transition-colors">Petition</Link>
+              <Link href="/danger-zone" className="px-4 py-2.5 hover:bg-notice transition-colors">Danger Zone</Link>
+              <Link href="/yellow-zone" className="px-4 py-2.5 hover:bg-notice transition-colors">Yellow Zone</Link>
+            </div>
+          </details>
+
+          {user ? (
+            <details className="relative">
+              <summary className={`list-none cursor-pointer ${navLink} border-rule`}>{accountLabel} ▾</summary>
+              <div className="dropdown-panel absolute right-0 top-[calc(100%+6px)] bg-paper border-[1.5px] border-rule rounded-sm min-w-[160px] flex flex-col py-1 shadow-lg">
+                <Link href="/account" className="px-4 py-2.5 hover:bg-notice transition-colors">{accountLabel}</Link>
+                <div className="px-2 py-1.5">
+                  <SignOutButton />
+                </div>
+              </div>
+            </details>
+          ) : (
+            <Link href="/account" className={`${navLink} border-rule`}>Sign in</Link>
+          )}
         </nav>
 
         {/* Mobile nav */}
@@ -51,18 +61,21 @@ export default async function Header() {
           <summary className="list-none cursor-pointer border-[1.5px] border-rule rounded-sm px-3 py-1.5 text-sm">
             Menu
           </summary>
-          <div className="absolute left-0 right-0 top-[62px] bg-paper border-b-[1.5px] border-rule flex flex-col px-5 py-3 gap-1">
+          <div className="dropdown-panel absolute left-0 right-0 top-[62px] bg-paper border-b-[1.5px] border-rule flex flex-col px-5 py-3 gap-1">
             <Link href="/browse" className="py-2">Find a place</Link>
             <Link href="/post" className="py-2">Post a flat</Link>
-            <Link href="/petition" className="py-2">Petition</Link>
-            <Link href="/danger-zone" className="py-2">Danger Zone</Link>
-            <Link href="/yellow-zone" className="py-2">Yellow Zone</Link>
-            <Link href="/account" className="py-2">{accountLabel}</Link>
-            {user && (
-              <div className="py-2">
-                <SignOutButton />
-              </div>
-            )}
+            <p className="pt-2 pb-1 text-[12px] font-semibold text-soft uppercase tracking-wide">Safety</p>
+            <Link href="/petition" className="py-2 pl-2">Petition</Link>
+            <Link href="/danger-zone" className="py-2 pl-2">Danger Zone</Link>
+            <Link href="/yellow-zone" className="py-2 pl-2">Yellow Zone</Link>
+            <div className="border-t border-rule-thin mt-2 pt-2">
+              <Link href="/account" className="py-2 block">{accountLabel}</Link>
+              {user && (
+                <div className="py-1">
+                  <SignOutButton />
+                </div>
+              )}
+            </div>
           </div>
         </details>
 

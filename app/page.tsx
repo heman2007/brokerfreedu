@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import ListingCard from "@/components/ListingCard";
+import Hero3DLoader from "@/components/hero3d/Hero3DLoader";
+import { buildNav } from "@/components/hero3d/nav";
 import type { Listing } from "@/lib/types";
 
 export const revalidate = 0;
@@ -14,6 +16,16 @@ function fmtDate(dateStr: string) {
 
 export default async function HomePage() {
   const supabase = createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  let accountLabel = "Sign in";
+  if (user) {
+    const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
+    accountLabel = profile?.role === "owner" ? "My properties" : "My account";
+  }
+  const nav = buildNav(accountLabel);
 
   const { count: signatureCount } = await supabase
     .from("petition_signatures")
@@ -42,66 +54,8 @@ export default async function HomePage() {
 
   return (
     <>
-      <section className="border-b border-rule min-h-[100dvh] flex items-center py-16">
-        <div className="max-w-[1240px] mx-auto px-6 w-full grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-16 items-center">
-          <div className="animate-fade-in">
-            <p className="eyebrow mb-5">A free, DU-only housing board</p>
-            <h1 className="font-serif text-[clamp(38px,6.5vw,76px)] leading-[1.05] tracking-tight font-medium mb-7">
-              The person moving out
-              <br />
-              knows first.
-            </h1>
-            <p className="text-[18px] text-soft max-w-[58ch] mb-10 leading-relaxed">
-              Brokers around DU charge half a month&apos;s rent for one piece of information: which
-              flat is about to be empty. Students already have it. Post it here before you leave,
-              and the next student walks in without paying anyone.
-            </p>
-            <div className="flex items-baseline gap-5 flex-wrap mb-10">
-              <div className="font-serif text-[clamp(56px,10vw,104px)] leading-[0.85] font-medium" style={{ color: "var(--accent)" }}>
-                {soon.length}
-              </div>
-              <span className="text-[16px] max-w-[20ch] text-soft leading-snug">
-                {soon.length === 1 ? "flat or room opens" : "flats and rooms open"} up near campus
-                in the next 30 days
-              </span>
-            </div>
-            {soon.length > 0 && (
-              <div className="flex flex-wrap gap-2 mb-10">
-                {soon.slice(0, 6).map((l, i) => (
-                  <span
-                    key={l.id}
-                    className="border border-rule px-3 py-1.5 text-[13px] text-soft animate-fade-in"
-                    style={{ animationDelay: `${i * 50}ms`, animationFillMode: "backwards" }}
-                  >
-                    {l.locality} · {money(l.rent)} · {fmtDate(l.leaving_date)}
-                  </span>
-                ))}
-              </div>
-            )}
-            <div className="flex flex-wrap gap-4">
-              <Link href="/browse" className="btn-primary inline-block px-7 py-3.5 text-[13.5px] font-semibold" style={{ letterSpacing: "0.03em" }}>
-                See what&apos;s open
-              </Link>
-              <Link href="/post" className="btn-ghost inline-block px-7 py-3.5 text-[13.5px] font-semibold" style={{ letterSpacing: "0.03em" }}>
-                Post the flat I&apos;m leaving
-              </Link>
-            </div>
-          </div>
+      <Hero3DLoader nav={nav} />
 
-          {/* Satyagraha — placeholder wording/photo, confirm with Deepanshu before shipping */}
-          <div className="lg:border-l lg:border-rule lg:pl-12 animate-fade-in" style={{ animationDelay: "200ms", animationFillMode: "backwards" }}>
-            <h2
-              className="font-serif text-[38px] font-medium tracking-tight leading-[1] mb-2"
-              style={{ color: "var(--signal)" }}
-            >
-              Satyagraha
-            </h2>
-            <p className="font-serif italic text-[15px] text-soft mb-6">movement by</p>
-            <p className="text-[17px] font-medium leading-tight mb-1.5">Deepanshu Shokeen</p>
-            <p className="eyebrow">DUSU Vice President 2026</p>
-          </div>
-        </div>
-      </section>
 
       <section className="border-b border-rule py-24">
         <div className="max-w-[1240px] mx-auto px-6">
